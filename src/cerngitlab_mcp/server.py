@@ -13,6 +13,9 @@ from cerngitlab_mcp.exceptions import CERNGitLabError
 from cerngitlab_mcp.gitlab_client import GitLabClient
 from cerngitlab_mcp.logging import setup_logging
 from cerngitlab_mcp.tools import (
+    analyze_dependencies,
+    get_build_config,
+    get_ci_config,
     get_file_content,
     get_repository_info,
     get_repository_readme,
@@ -79,6 +82,9 @@ async def list_tools() -> list[Tool]:
         get_repository_readme.TOOL_DEFINITION,
         search_code.TOOL_DEFINITION,
         get_wiki_pages.TOOL_DEFINITION,
+        analyze_dependencies.TOOL_DEFINITION,
+        get_ci_config.TOOL_DEFINITION,
+        get_build_config.TOOL_DEFINITION,
     ]
 
 
@@ -95,6 +101,9 @@ _TOOL_HANDLERS = {
     "get_repository_readme": get_repository_readme,
     "search_code": search_code,
     "get_wiki_pages": get_wiki_pages,
+    "analyze_dependencies": analyze_dependencies,
+    "get_ci_config": get_ci_config,
+    "get_build_config": get_build_config,
 }
 
 
