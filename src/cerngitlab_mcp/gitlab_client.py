@@ -111,6 +111,26 @@ class GitLabClient:
             RateLimitError: On 429 responses after retries exhausted.
             GitLabAPIError: On other error responses.
         """
+        response = await self.request_raw(method, path, params=params, json_body=json_body)
+        return response.json()
+
+    async def get(self, path: str, *, params: dict[str, Any] | None = None) -> Any:
+        """Convenience method for GET requests."""
+        return await self.request("GET", path, params=params)
+
+    async def request_raw(
+        self,
+        method: str,
+        path: str,
+        *,
+        params: dict[str, Any] | None = None,
+        json_body: dict[str, Any] | None = None,
+    ) -> httpx.Response:
+        """Make an API request and return the raw httpx.Response.
+
+        Same retry/rate-limit logic as request(), but returns the full
+        response object so callers can inspect headers (e.g. pagination).
+        """
         client = await self._get_client()
         last_exception: Exception | None = None
 
@@ -143,9 +163,8 @@ class GitLabClient:
                     await asyncio.sleep(2 ** attempt)
                 continue
 
-            # Handle response status codes
             if response.status_code == 200:
-                return response.json()
+                return response
 
             if response.status_code == 401:
                 raise AuthenticationError()
@@ -162,7 +181,6 @@ class GitLabClient:
                     continue
                 raise RateLimitError(retry_after=wait)
 
-            # Other error codes
             try:
                 error_body = response.json()
                 error_msg = error_body.get("message", error_body.get("error", str(error_body)))
@@ -179,17 +197,12 @@ class GitLabClient:
 
             raise GitLabAPIError(str(error_msg), response.status_code)
 
-        # All retries exhausted
         if last_exception:
             raise GitLabAPIError(
                 f"Request failed after {self.settings.max_retries} retries: {last_exception}",
                 status_code=0,
             )
         raise GitLabAPIError("Request failed with unknown error", status_code=0)
-
-    async def get(self, path: str, *, params: dict[str, Any] | None = None) -> Any:
-        """Convenience method for GET requests."""
-        return await self.request("GET", path, params=params)
 
     async def get_paginated(
         self,
@@ -199,6 +212,10 @@ class GitLabClient:
         max_pages: int = 5,
     ) -> list[Any]:
         """Fetch multiple pages of results.
+
+        Uses GitLab pagination headers (x-next-page, x-total-pages) to
+        iterate through result pages. All requests go through the full
+        retry/rate-limit/error-handling pipeline.
 
         Args:
             path: API path.
@@ -214,58 +231,70 @@ class GitLabClient:
 
         all_results: list[Any] = []
 
-        for _ in range(max_pages):
-            client = await self._get_client()
-            await self._rate_limiter.acquire()
+        for page_num in range(max_pages):
+            response = await self.request_raw("GET", path, params=params)
+            data = response.json()
 
-            response = await client.request("GET", path, params=params)
-
-            if response.status_code == 200:
-                data = response.json()
-                if isinstance(data, list):
-                    all_results.extend(data)
-                    # Check if there are more pages
-                    next_page = response.headers.get("x-next-page", "")
-                    if not next_page or not data:
-                        break
-                    params["page"] = int(next_page)
-                else:
-                    all_results.append(data)
+            if isinstance(data, list):
+                all_results.extend(data)
+                if not data:
                     break
+                next_page = response.headers.get("x-next-page", "")
+                if not next_page:
+                    break
+                params["page"] = int(next_page)
             else:
-                # Use the standard error handling
+                all_results.append(data)
                 break
+
+            logger.debug(
+                "Paginated fetch %s page %d, got %d items (total so far: %d)",
+                path, page_num + 1, len(data), len(all_results),
+            )
 
         return all_results
 
     async def test_connection(self) -> dict[str, Any]:
         """Test connectivity to the GitLab instance.
 
+        Uses two probes:
+        1. GET /projects?per_page=1&visibility=public — works without auth
+        2. GET /version — requires authentication on most instances
+
         Returns:
             Dict with connection status and metadata.
         """
+        authenticated = bool(self.settings.token)
+        result: dict[str, Any] = {
+            "status": "error",
+            "gitlab_url": self.base_url,
+            "authenticated": authenticated,
+        }
+
+        # Probe 1: public projects endpoint (no auth needed)
         try:
-            # /version is a lightweight endpoint available on all GitLab instances
-            version_info = await self.get("/version")
-            authenticated = bool(self.settings.token)
-            return {
-                "status": "connected",
-                "gitlab_url": self.base_url,
-                "version": version_info.get("version", "unknown"),
-                "revision": version_info.get("revision", "unknown"),
-                "authenticated": authenticated,
-            }
-        except AuthenticationError:
-            return {
-                "status": "auth_error",
-                "gitlab_url": self.base_url,
-                "authenticated": False,
-                "error": "Invalid or expired token",
-            }
+            projects = await self.get(
+                "/projects",
+                params={"per_page": 1, "visibility": "public"},
+            )
+            result["status"] = "connected"
+            result["public_access"] = True
         except Exception as exc:
-            return {
-                "status": "error",
-                "gitlab_url": self.base_url,
-                "authenticated": False,
-                "error": str(exc),
-            }
+            result["error"] = f"Cannot reach GitLab: {exc}"
+            return result
+
+        # Probe 2: /version (requires auth on CERN GitLab)
+        if authenticated:
+            try:
+                version_info = await self.get("/version")
+                result["version"] = version_info.get("version", "unknown")
+                result["revision"] = version_info.get("revision", "unknown")
+            except AuthenticationError:
+                result["auth_valid"] = False
+                result["warning"] = "Token provided but rejected — falling back to public access"
+            except Exception:
+                pass  # version endpoint may simply require auth; not critical
+        else:
+            result["note"] = "No token provided — public access only"
+
+        return result
