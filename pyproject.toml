@@ -1,0 +1,38 @@
+[project]
+name = "cerngitlab-mcp"
+version = "0.1.0"
+description = "MCP server for CERN GitLab - code discovery, documentation access, and usage examples for HEP projects"
+readme = "README.md"
+authors = [
+    { name = "MohamedElashri", email = "mail@elashri.com" }
+]
+requires-python = ">=3.14"
+license = { text = "AGPL-3.0" }
+keywords = ["mcp", "gitlab", "cern", "hep", "physics"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Science/Research",
+    "Topic :: Scientific/Engineering :: Physics",
+    "Programming Language :: Python :: 3",
+]
+dependencies = [
+    "mcp>=1.0.0",
+    "httpx>=0.27.0",
+    "pydantic>=2.0.0",
+    "pydantic-settings>=2.0.0",
+]
+
+[project.scripts]
+cerngitlab-mcp = "cerngitlab_mcp.server:main"
+
+[build-system]
+requires = ["uv_build>=0.9.26,<0.10.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "pytest>=8.0.0",
+    "pytest-asyncio>=0.23.0",
+    "pytest-httpx>=0.30.0",
+    "ruff>=0.4.0",
+]
