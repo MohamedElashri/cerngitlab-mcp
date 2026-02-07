@@ -273,7 +273,7 @@ class GitLabClient:
 
         # Probe 1: public projects endpoint (no auth needed)
         try:
-            projects = await self.get(
+            await self.get(
                 "/projects",
                 params={"per_page": 1, "visibility": "public"},
             )

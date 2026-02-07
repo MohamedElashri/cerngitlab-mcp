@@ -89,7 +89,6 @@ def _analyze_ci_yaml(content: str) -> dict[str, Any]:
     variables = {}
     in_vars = False
     for line in content.splitlines():
-        stripped = line.strip()
         if re.match(r"^variables:\s*$", line):
             in_vars = True
             continue

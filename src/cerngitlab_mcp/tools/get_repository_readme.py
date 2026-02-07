@@ -69,7 +69,6 @@ async def handle(client: GitLabClient, arguments: dict) -> dict[str, Any]:
     ref = await resolve_ref(client, encoded_project, ref)
 
     # Try each README candidate
-    last_error: Exception | None = None
     for readme_name in _README_CANDIDATES:
         encoded_path = quote(readme_name, safe="")
         try:
@@ -99,7 +98,6 @@ async def handle(client: GitLabClient, arguments: dict) -> dict[str, Any]:
             }
 
         except NotFoundError:
-            last_error = NotFoundError(f"README ({readme_name})")
             continue
 
     # None found
