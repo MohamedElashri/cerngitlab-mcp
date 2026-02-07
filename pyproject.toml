@@ -1,6 +1,6 @@
 [project]
 name = "cerngitlab-mcp"
-version = "0.1.0"
+version = "0.1.1"
 description = "MCP server for CERN GitLab - code discovery, documentation access, and usage examples for HEP projects"
 readme = "README.md"
 authors = [
