@@ -17,7 +17,7 @@
 
 ## Installation
 
-Requires Python 3.14+.
+Requires Python 3.10+.
 
 ### Quickstart (recommended)
 

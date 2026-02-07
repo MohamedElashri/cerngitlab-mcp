@@ -6,7 +6,7 @@ readme = "README.md"
 authors = [
     { name = "MohamedElashri", email = "mail@elashri.com" }
 ]
-requires-python = ">=3.14"
+requires-python = ">=3.10"
 license = { text = "AGPL-3.0" }
 keywords = ["mcp", "gitlab", "cern", "hep", "physics", "lhc", "root", "model-context-protocol"]
 classifiers = [
@@ -14,7 +14,10 @@ classifiers = [
     "Intended Audience :: Science/Research",
     "Topic :: Scientific/Engineering :: Physics",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.14",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
     "License :: OSI Approved :: GNU Affero General Public License v3",
     "Operating System :: OS Independent",
 ]
