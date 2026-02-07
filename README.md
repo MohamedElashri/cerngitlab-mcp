@@ -11,14 +11,27 @@ An [MCP](https://modelcontextprotocol.io/) server that connects LLMs to [CERN Gi
 
 ## Installation
 
-Requires Python 3.14+ and [UV](https://docs.astral.sh/uv/).
+Requires Python 3.14+.
+
+### Quickstart (recommended)
+
+No installation needed — just use [`uvx`](https://docs.astral.sh/uv/) to run directly:
 
 ```bash
-# Clone the repository
+uvx cerngitlab-mcp
+```
+
+### From PyPI
+
+```bash
+pip install cerngitlab-mcp
+```
+
+### From source
+
+```bash
 git clone https://github.com/MohamedElashri/cerngitlab-mcp
 cd cerngitlab-mcp
-
-# Install with UV
 uv sync
 ```
 
@@ -51,7 +64,7 @@ To create a token:
 
 ## Usage
 
-### With Claude Desktop
+### Claude Desktop
 
 Add to your `claude_desktop_config.json`:
 
@@ -59,8 +72,8 @@ Add to your `claude_desktop_config.json`:
 {
   "mcpServers": {
     "cerngitlab": {
-      "command": "uv",
-      "args": ["run", "--directory", "/path/to/cerngitlab-mcp", "cerngitlab-mcp"],
+      "command": "uvx",
+      "args": ["cerngitlab-mcp"],
       "env": {
         "CERNGITLAB_TOKEN": "glpat-xxxxxxxxxxxx"
       }
@@ -69,14 +82,86 @@ Add to your `claude_desktop_config.json`:
 }
 ```
 
-### With other MCP clients
+### Claude Code
 
 ```bash
-# Run directly
+claude mcp add cerngitlab-mcp -- uvx cerngitlab-mcp
+```
+
+To include authentication:
+
+```bash
+claude mcp add cerngitlab-mcp -e CERNGITLAB_TOKEN=glpat-xxxxxxxxxxxx -- uvx cerngitlab-mcp
+```
+
+### GitHub Copilot
+
+Add to your VS Code `settings.json`:
+
+```json
+{
+  "mcp": {
+    "servers": {
+      "cerngitlab": {
+        "command": "uvx",
+        "args": ["cerngitlab-mcp"],
+        "env": {
+          "CERNGITLAB_TOKEN": "glpat-xxxxxxxxxxxx"
+        }
+      }
+    }
+  }
+}
+```
+
+Or add a `.vscode/mcp.json` to your project:
+
+```json
+{
+  "servers": {
+    "cerngitlab": {
+      "command": "uvx",
+      "args": ["cerngitlab-mcp"],
+      "env": {
+        "CERNGITLAB_TOKEN": "glpat-xxxxxxxxxxxx"
+      }
+    }
+  }
+}
+```
+
+### Gemini CLI
+
+Add to your `~/.gemini/settings.json`:
+
+```json
+{
+  "mcpServers": {
+    "cerngitlab": {
+      "command": "uvx",
+      "args": ["cerngitlab-mcp"],
+      "env": {
+        "CERNGITLAB_TOKEN": "glpat-xxxxxxxxxxxx"
+      }
+    }
+  }
+}
+```
+
+### Direct usage
+
+```bash
+# Run with uvx (no install needed)
+uvx cerngitlab-mcp
+
+# Or if installed from PyPI
+cerngitlab-mcp
+
+# Or from source
 uv run cerngitlab-mcp
 
-# Or with environment variables
-CERNGITLAB_TOKEN=glpat-xxx uv run cerngitlab-mcp
+# With authentication
+CERNGITLAB_TOKEN=glpat-xxx uvx cerngitlab-mcp
 ```
 
 ## Tools Reference
@@ -225,13 +310,13 @@ Test connection to the CERN GitLab instance. No parameters required.
 > "Search for repositories on CERN GitLab that use RooFit and show me example fitting code"
 
 ### Check dependencies
-> "What are the dependencies of the atlas/athena project? Show me the CMakeLists.txt and any Python requirements"
+> "What are the dependencies of the lhcb/allen project? Show me the CMakeLists.txt and any Python requirements"
 
 ### Track releases
 > "List the recent releases of lhcb/DaVinci and show me the release notes for the latest version"
 
 ### Explore CI/CD
-> "Get the CI/CD configuration of the atlas/athena project and explain the pipeline stages"
+> "Get the CI/CD configuration of the lhcb/allen project and explain the pipeline stages"
 
 ### Find framework configurations
 > "Search for Gaudi framework configuration files on CERN GitLab and show me examples"
@@ -242,8 +327,8 @@ Test connection to the CERN GitLab instance. No parameters required.
 # Install dev dependencies
 uv sync
 
-# Run tests
-uv run pytest tests/test_unit_tools.py -v
+# Run unit tests
+uv run pytest -v
 
 # Run integration tests (requires network access to gitlab.cern.ch)
 uv run python tests/test_integration.py

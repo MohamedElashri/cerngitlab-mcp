@@ -8,12 +8,15 @@ authors = [
 ]
 requires-python = ">=3.14"
 license = { text = "AGPL-3.0" }
-keywords = ["mcp", "gitlab", "cern", "hep", "physics"]
+keywords = ["mcp", "gitlab", "cern", "hep", "physics", "lhc", "root", "model-context-protocol"]
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Science/Research",
     "Topic :: Scientific/Engineering :: Physics",
     "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.14",
+    "License :: OSI Approved :: GNU Affero General Public License v3",
+    "Operating System :: OS Independent",
 ]
 dependencies = [
     "mcp>=1.0.0",
@@ -21,6 +24,11 @@ dependencies = [
     "pydantic>=2.0.0",
     "pydantic-settings>=2.0.0",
 ]
+
+[project.urls]
+Homepage = "https://github.com/MohamedElashri/cerngitlab-mcp"
+Repository = "https://github.com/MohamedElashri/cerngitlab-mcp"
+Issues = "https://github.com/MohamedElashri/cerngitlab-mcp/issues"
 
 [project.scripts]
 cerngitlab-mcp = "cerngitlab_mcp.server:main"
