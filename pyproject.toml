@@ -29,6 +29,7 @@ dependencies = [
 Homepage = "https://github.com/MohamedElashri/cerngitlab-mcp"
 Repository = "https://github.com/MohamedElashri/cerngitlab-mcp"
 Issues = "https://github.com/MohamedElashri/cerngitlab-mcp/issues"
+Icon = "https://raw.githubusercontent.com/MohamedElashri/cerngitlab-mcp/main/icons/icon.svg"
 
 [project.scripts]
 cerngitlab-mcp = "cerngitlab_mcp.server:main"

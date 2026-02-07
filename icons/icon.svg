@@ -1,0 +1,76 @@
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1a237e;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#0d47a1;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="particleGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#00e5ff;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#00b0ff;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="gitlabGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#fc6d26;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#e24329;stop-opacity:1" />
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  
+  <!-- Background circle -->
+  <circle cx="256" cy="256" r="240" fill="url(#bgGrad)"/>
+  
+  <!-- Particle accelerator ring representation -->
+  <circle cx="256" cy="256" r="180" fill="none" stroke="url(#particleGrad)" stroke-width="3" opacity="0.4"/>
+  <circle cx="256" cy="256" r="160" fill="none" stroke="url(#particleGrad)" stroke-width="2" opacity="0.3"/>
+  
+  <!-- Particle collision points (inspired by LHCb detector) -->
+  <circle cx="256" cy="76" r="6" fill="#00e5ff" filter="url(#glow)"/>
+  <circle cx="436" cy="256" r="6" fill="#00e5ff" filter="url(#glow)"/>
+  <circle cx="256" cy="436" r="6" fill="#00e5ff" filter="url(#glow)"/>
+  <circle cx="76" cy="256" r="6" fill="#00e5ff" filter="url(#glow)"/>
+  
+  <!-- Central GitLab-inspired fox/tanuki shape with CERN twist -->
+  <g transform="translate(256, 256)">
+    <!-- Stylized GitLab logo segments forming connection hub -->
+    <path d="M 0,-80 L 40,-20 L 0,0 Z" fill="url(#gitlabGrad)" opacity="0.9"/>
+    <path d="M 0,-80 L -40,-20 L 0,0 Z" fill="url(#gitlabGrad)" opacity="0.9"/>
+    <path d="M 40,-20 L 80,20 L 0,0 Z" fill="#fca326" opacity="0.85"/>
+    <path d="M -40,-20 L -80,20 L 0,0 Z" fill="#fca326" opacity="0.85"/>
+    <path d="M 80,20 L 60,80 L 0,0 Z" fill="#fc6d26" opacity="0.8"/>
+    <path d="M -80,20 L -60,80 L 0,0 Z" fill="#fc6d26" opacity="0.8"/>
+    <path d="M 60,80 L 0,60 L 0,0 Z" fill="#e24329" opacity="0.9"/>
+    <path d="M -60,80 L 0,60 L 0,0 Z" fill="#e24329" opacity="0.9"/>
+  </g>
+  
+  <!-- MCP connection nodes -->
+  <g opacity="0.7">
+    <circle cx="340" cy="172" r="8" fill="#00e5ff" stroke="#ffffff" stroke-width="2"/>
+    <circle cx="172" cy="172" r="8" fill="#00e5ff" stroke="#ffffff" stroke-width="2"/>
+    <circle cx="340" cy="340" r="8" fill="#00e5ff" stroke="#ffffff" stroke-width="2"/>
+    <circle cx="172" cy="340" r="8" fill="#00e5ff" stroke="#ffffff" stroke-width="2"/>
+  </g>
+  
+  <!-- Connection lines (MCP protocol concept) -->
+  <g stroke="#00b0ff" stroke-width="2" opacity="0.3">
+    <line x1="256" y1="256" x2="340" y2="172"/>
+    <line x1="256" y1="256" x2="172" y2="172"/>
+    <line x1="256" y1="256" x2="340" y2="340"/>
+    <line x1="256" y1="256" x2="172" y2="340"/>
+  </g>
+  
+  <!-- Particle tracks (inspired by detector visualizations) -->
+  <g stroke="#00e5ff" stroke-width="1.5" fill="none" opacity="0.2">
+    <path d="M 256,76 Q 300,120 340,172"/>
+    <path d="M 436,256 Q 380,280 340,340"/>
+    <path d="M 256,436 Q 210,390 172,340"/>
+    <path d="M 76,256 Q 130,230 172,172"/>
+  </g>
+  
+  <!-- Outer ring -->
+  <circle cx="256" cy="256" r="240" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="2"/>
+</svg>

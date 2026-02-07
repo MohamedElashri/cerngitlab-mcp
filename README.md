@@ -1,6 +1,12 @@
-# CERN GitLab MCP Server
+<p align="center">
+  <img src="https://raw.githubusercontent.com/MohamedElashri/cerngitlab-mcp/main/icons/icon.svg" alt="CERN GitLab MCP Server" width="160" />
+</p>
 
-An [MCP](https://modelcontextprotocol.io/) server that connects LLMs to [CERN GitLab](https://gitlab.cern.ch) for discovering HEP code, documentation, and analysis examples.
+<h1 align="center">CERN GitLab MCP Server</h1>
+
+<p align="center">
+  An <a href="https://modelcontextprotocol.io/">MCP</a> server that connects LLMs to <a href="https://gitlab.cern.ch">CERN GitLab</a> for discovering HEP code, documentation, and analysis examples.
+</p>
 
 ## Features
 
