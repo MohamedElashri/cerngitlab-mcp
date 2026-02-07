@@ -1,6 +1,6 @@
 # CERN GitLab MCP Server
 
-An [MCP (Model Context Protocol)](https://modelcontextprotocol.io/) server that connects LLMs to [CERN GitLab](https://gitlab.cern.ch) for discovering HEP code, documentation, and analysis examples.
+An [MCP](https://modelcontextprotocol.io/) server that connects LLMs to [CERN GitLab](https://gitlab.cern.ch) for discovering HEP code, documentation, and analysis examples.
 
 ## Features
 
@@ -246,41 +246,12 @@ uv sync
 uv run pytest tests/test_unit_tools.py -v
 
 # Run integration tests (requires network access to gitlab.cern.ch)
-uv run python tests/test_phase3_tools.py
-uv run python tests/test_phase4_tools.py
-uv run python tests/test_phase5_tools.py
-uv run python tests/test_phase6_tools.py
+uv run python tests/test_integration.py
 
 # Lint
 uv run ruff check src/
 ```
 
-## Architecture
-
-```
-src/cerngitlab_mcp/
-├── __init__.py              # Package version
-├── config.py                # Pydantic Settings (env-based)
-├── exceptions.py            # Custom exception hierarchy
-├── gitlab_client.py         # Async HTTP client with rate limiting
-├── logging.py               # Structured logging
-├── server.py                # MCP server + tool dispatch
-└── tools/
-    ├── utils.py             # Shared helpers (encode_project, resolve_ref, fetch_file)
-    ├── search_repositories.py
-    ├── get_repository_info.py
-    ├── list_repository_files.py
-    ├── get_file_content.py
-    ├── get_repository_readme.py
-    ├── search_code.py
-    ├── get_wiki_pages.py
-    ├── analyze_dependencies.py
-    ├── get_ci_config.py
-    ├── get_build_config.py
-    ├── list_releases.py
-    ├── get_release.py
-    └── list_tags.py
-```
 
 ## License
 
