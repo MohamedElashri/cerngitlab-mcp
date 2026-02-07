@@ -170,143 +170,32 @@ uv run cerngitlab-mcp
 CERNGITLAB_TOKEN=glpat-xxx uvx cerngitlab-mcp
 ```
 
-## Tools Reference
+## Tools
 
-### Repository Discovery
-
-#### `search_repositories`
-Search for public repositories by keywords, topics, or programming language.
-
-| Parameter | Type | Description |
+| Tool | Description | Auth required |
 |---|---|---|
-| `query` | string | Search query (matches name, description) |
-| `language` | string | Filter by language (e.g. `python`, `c++`) |
-| `topic` | string | Filter by topic (e.g. `physics`, `atlas`) |
-| `sort_by` | string | Sort field: `last_activity_at`, `name`, `created_at`, `stars` |
-| `order` | string | `desc` or `asc` |
-| `per_page` | integer | Results count (1–100, default: 20) |
+| `search_repositories` | Search public repositories by keywords, topics, or language | No |
+| `get_repository_info` | Get repository details (languages, stats, license) | No |
+| `list_repository_files` | Browse the file tree of a repository | No |
+| `get_file_content` | Retrieve file content with binary detection | No |
+| `get_repository_readme` | Get the README file (tries common filenames) | No |
+| `search_code` | Search for code across repositories | Yes* |
+| `get_wiki_pages` | Access repository wiki pages | Yes |
+| `analyze_dependencies` | Parse dependency files (Python, C++, Fortran) | No |
+| `get_ci_config` | Retrieve and analyze `.gitlab-ci.yml` | No |
+| `get_build_config` | Find build config files (CMake, Make, setuptools, etc.) | No |
+| `list_releases` | List releases from a repository | No |
+| `get_release` | Get details of a specific release | No |
+| `list_tags` | List repository tags with optional filtering | No |
+| `test_connectivity` | Test connection to the GitLab instance | No |
 
-#### `get_repository_info`
-Get detailed information about a specific repository including languages, statistics, and license.
+\* `search_code` works without auth for project-scoped search (uses fallback grep). Global search requires authentication.
 
-| Parameter | Type | Required | Description |
-|---|---|---|---|
-| `project` | string | yes | Numeric ID or path (e.g. `atlas/athena`) |
+For detailed parameter documentation, see [dev.md](dev.md).
 
-#### `list_repository_files`
-Browse the file tree of a repository.
+## Example Prompts
 
-| Parameter | Type | Required | Description |
-|---|---|---|---|
-| `project` | string | yes | Numeric ID or path |
-| `path` | string | no | Subdirectory path |
-| `ref` | string | no | Branch/tag/commit |
-| `recursive` | boolean | no | List recursively |
-| `per_page` | integer | no | Results count (default: 100) |
-
-### Code & Documentation Access
-
-#### `get_file_content`
-Retrieve file content with binary detection and syntax highlighting hints.
-
-| Parameter | Type | Required | Description |
-|---|---|---|---|
-| `project` | string | yes | Numeric ID or path |
-| `file_path` | string | yes | Path within repository |
-| `ref` | string | no | Branch/tag/commit |
-
-#### `get_repository_readme`
-Get the README file, automatically trying common filenames (README.md, .rst, .txt, etc.).
-
-| Parameter | Type | Required | Description |
-|---|---|---|---|
-| `project` | string | yes | Numeric ID or path |
-| `ref` | string | no | Branch/tag/commit |
-
-#### `search_code`
-Search for code across repositories. **Requires authentication.**
-
-| Parameter | Type | Required | Description |
-|---|---|---|---|
-| `search_term` | string | yes | Code/text to search for |
-| `project` | string | no | Limit to specific project |
-| `scope` | string | no | `blobs` (content) or `filenames` |
-| `per_page` | integer | no | Results count (default: 20) |
-
-#### `get_wiki_pages`
-Access repository wiki pages. **Requires authentication.**
-
-| Parameter | Type | Required | Description |
-|---|---|---|---|
-| `project` | string | yes | Numeric ID or path |
-| `page_slug` | string | no | Specific page slug (omit to list all) |
-
-### Dependency & Build Analysis
-
-#### `analyze_dependencies`
-Parse dependency files for Python, C++, and Fortran ecosystems.
-
-| Parameter | Type | Required | Description |
-|---|---|---|---|
-| `project` | string | yes | Numeric ID or path |
-| `ref` | string | no | Branch/tag/commit |
-
-Detects: `requirements.txt`, `pyproject.toml`, `setup.py`, `CMakeLists.txt`, `conda.yaml`, and more.
-
-#### `get_ci_config`
-Retrieve and analyze `.gitlab-ci.yml` configuration.
-
-| Parameter | Type | Required | Description |
-|---|---|---|---|
-| `project` | string | yes | Numeric ID or path |
-| `ref` | string | no | Branch/tag/commit |
-
-Returns raw YAML content plus structural analysis (stages, jobs, includes, variables).
-
-#### `get_build_config`
-Find and retrieve build configuration files (CMakeLists.txt, Makefile, setup.py, pyproject.toml, etc.).
-
-| Parameter | Type | Required | Description |
-|---|---|---|---|
-| `project` | string | yes | Numeric ID or path |
-| `ref` | string | no | Branch/tag/commit |
-
-### Release & Version Tracking
-
-#### `list_releases`
-List releases from a repository.
-
-| Parameter | Type | Required | Description |
-|---|---|---|---|
-| `project` | string | yes | Numeric ID or path |
-| `per_page` | integer | no | Results count (default: 20) |
-
-#### `get_release`
-Get detailed information about a specific release.
-
-| Parameter | Type | Required | Description |
-|---|---|---|---|
-| `project` | string | yes | Numeric ID or path |
-| `tag_name` | string | yes | Release tag (e.g. `v1.0.0`) |
-
-#### `list_tags`
-List repository tags with optional filtering.
-
-| Parameter | Type | Required | Description |
-|---|---|---|---|
-| `project` | string | yes | Numeric ID or path |
-| `search` | string | no | Filter by name prefix |
-| `sort` | string | no | `asc` or `desc` |
-| `per_page` | integer | no | Results count (default: 20) |
-
-### Utility
-
-#### `test_connectivity`
-Test connection to the CERN GitLab instance. No parameters required.
-
-## Example LLM Prompts
-
-### Find ROOT analysis code
+### Search for repositories
 > "Search CERN GitLab for Python repositories related to ROOT analysis and show me the most starred ones"
 
 ### Understand a project
@@ -329,20 +218,7 @@ Test connection to the CERN GitLab instance. No parameters required.
 
 ## Development
 
-```bash
-# Install dev dependencies
-uv sync
-
-# Run unit tests
-uv run pytest -v
-
-# Run integration tests (requires network access to gitlab.cern.ch)
-uv run python tests/test_integration.py
-
-# Lint
-uv run ruff check src/
-```
-
+See [dev.md](dev.md) for development setup, project structure, testing, and release instructions.
 
 ## License
 
