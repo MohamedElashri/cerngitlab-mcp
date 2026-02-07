@@ -206,6 +206,46 @@ class TestSearchCode:
         with pytest.raises(ValueError, match="search_term"):
             await search_code.handle(client, {"search_term": ""})
 
+    @pytest.mark.asyncio
+    async def test_global_search_without_advanced_search_returns_error(self, client, httpx_mock):
+        httpx_mock.add_response(
+            status_code=400,
+            json={"error": "Scope supported only with advanced search or exact code search"},
+        )
+        result = await search_code.handle(client, {"search_term": "RooFit"})
+        assert result["total_results"] == 0
+        assert "advanced search" in result["error"].lower()
+        assert "project" in result["error"].lower()
+
+    @pytest.mark.httpx_mock(can_send_already_matched_responses=True)
+    @pytest.mark.asyncio
+    async def test_project_search_falls_back_to_tree_grep(self, client, httpx_mock):
+        # First call: /projects/123/search returns 400 (no advanced search)
+        httpx_mock.add_response(
+            url=httpx.URL("https://gitlab.example.com/api/v4/projects/123/search",
+                          params={"search": "RooFit", "scope": "blobs", "per_page": "20"}),
+            status_code=400,
+            json={"error": "Scope supported only with advanced search"},
+        )
+        # Fallback: tree listing
+        httpx_mock.add_response(
+            url=httpx.URL("https://gitlab.example.com/api/v4/projects/123/repository/tree",
+                          params={"recursive": "true", "per_page": "500"}),
+            json=[
+                {"name": "fit.py", "type": "blob", "path": "fit.py"},
+                {"name": "data.root", "type": "blob", "path": "data.root"},
+            ],
+        )
+        # Fallback: fetch fit.py content (data.root is not searchable)
+        httpx_mock.add_response(
+            json=make_file_response("import ROOT\nws = ROOT.RooFit.workspace()\n", "fit.py"),
+        )
+        result = await search_code.handle(client, {"search_term": "RooFit", "project": "123"})
+        assert result["total_results"] == 1
+        assert result["results"][0]["file_path"] == "fit.py"
+        assert "RooFit" in result["results"][0]["data"]
+        assert "note" in result
+
 
 class TestGetWikiPages:
     @pytest.mark.asyncio

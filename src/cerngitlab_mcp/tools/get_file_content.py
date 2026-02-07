@@ -5,7 +5,7 @@ import mimetypes
 from typing import Any
 from urllib.parse import quote
 
-from mcp.types import TextContent, Tool
+from mcp.types import Tool
 
 from cerngitlab_mcp.gitlab_client import GitLabClient
 from cerngitlab_mcp.tools.utils import encode_project, resolve_ref

@@ -8,7 +8,7 @@ from mcp.server import Server
 from mcp.server.stdio import stdio_server
 from mcp.types import TextContent, Tool
 
-from cerngitlab_mcp.config import Settings, get_settings
+from cerngitlab_mcp.config import get_settings
 from cerngitlab_mcp.exceptions import CERNGitLabError
 from cerngitlab_mcp.gitlab_client import GitLabClient
 from cerngitlab_mcp.logging import setup_logging

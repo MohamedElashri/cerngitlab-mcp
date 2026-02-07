@@ -3,7 +3,7 @@
 import re
 from typing import Any
 
-from mcp.types import TextContent, Tool
+from mcp.types import Tool
 
 from cerngitlab_mcp.gitlab_client import GitLabClient
 from cerngitlab_mcp.tools.utils import encode_project, resolve_ref, fetch_file
