@@ -1,15 +1,12 @@
 """MCP tool: analyze_dependencies — parse dependency files from a CERN GitLab repository."""
 
-import base64
 import re
 from typing import Any
-from urllib.parse import quote
 
 from mcp.types import TextContent, Tool
 
 from cerngitlab_mcp.gitlab_client import GitLabClient
-from cerngitlab_mcp.exceptions import NotFoundError
-from cerngitlab_mcp.tools.utils import encode_project, resolve_ref
+from cerngitlab_mcp.tools.utils import encode_project, resolve_ref, fetch_file
 
 
 # Dependency files to look for, grouped by ecosystem
@@ -64,25 +61,6 @@ TOOL_DEFINITION = Tool(
         "required": ["project"],
     },
 )
-
-
-async def _fetch_file(client: GitLabClient, encoded_project: str, file_path: str, ref: str) -> str | None:
-    """Fetch and decode a file, returning None if not found."""
-    encoded_path = quote(file_path, safe="")
-    try:
-        data = await client.get(
-            f"/projects/{encoded_project}/repository/files/{encoded_path}",
-            params={"ref": ref},
-        )
-        content_encoded = data.get("content", "")
-        encoding = data.get("encoding", "base64")
-        if encoding == "base64" and content_encoded:
-            return base64.b64decode(content_encoded).decode("utf-8")
-        return content_encoded
-    except NotFoundError:
-        return None
-    except Exception:
-        return None
 
 
 def _parse_requirements_txt(content: str) -> list[dict[str, str]]:
@@ -177,7 +155,7 @@ async def handle(client: GitLabClient, arguments: dict) -> dict[str, Any]:
 
     for ecosystem, files in _DEPENDENCY_FILES.items():
         for file_path in files:
-            content = await _fetch_file(client, encoded_project, file_path, ref)
+            content = await fetch_file(client, encoded_project, file_path, ref)
             if content is None:
                 continue
 

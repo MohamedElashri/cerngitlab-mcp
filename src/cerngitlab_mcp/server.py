@@ -17,10 +17,13 @@ from cerngitlab_mcp.tools import (
     get_build_config,
     get_ci_config,
     get_file_content,
+    get_release,
     get_repository_info,
     get_repository_readme,
     get_wiki_pages,
+    list_releases,
     list_repository_files,
+    list_tags,
     search_code,
     search_repositories,
 )
@@ -85,6 +88,9 @@ async def list_tools() -> list[Tool]:
         analyze_dependencies.TOOL_DEFINITION,
         get_ci_config.TOOL_DEFINITION,
         get_build_config.TOOL_DEFINITION,
+        list_releases.TOOL_DEFINITION,
+        get_release.TOOL_DEFINITION,
+        list_tags.TOOL_DEFINITION,
     ]
 
 
@@ -104,6 +110,9 @@ _TOOL_HANDLERS = {
     "analyze_dependencies": analyze_dependencies,
     "get_ci_config": get_ci_config,
     "get_build_config": get_build_config,
+    "list_releases": list_releases,
+    "get_release": get_release,
+    "list_tags": list_tags,
 }
 
 
