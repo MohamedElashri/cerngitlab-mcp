@@ -1,6 +1,5 @@
 """Unit tests for all MCP tools with mocked HTTP responses."""
 
-import base64
 
 import httpx
 import pytest
