@@ -88,6 +88,15 @@ Add to your `claude_desktop_config.json`:
 }
 ```
 
+> **Note for macOS users:** If you see an error about `uvx` not being found, you may need to provide the absolute path. Claude Desktop does not support `~` or `$HOME` expansion.
+>
+> 1. Run `which uvx` in your terminal to find the path (e.g., `/Users/yourusername/.local/bin/uvx`).
+> 2. Use that absolute path in the `command` field:
+>
+> ```json
+> "command": "/Users/yourusername/.local/bin/uvx"
+> ```
+
 ### Claude Code
 
 **Project-specific (default)** — installs in the current directory's configuration:
