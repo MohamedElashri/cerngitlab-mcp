@@ -1,16 +1,13 @@
 """MCP tool: inspect_project — unified analysis of a CERN GitLab repository."""
 
 import asyncio
-import base64
 import logging
 import re
 from typing import Any
-from urllib.parse import quote
 
 from mcp.types import Tool
 
 from cerngitlab_mcp.gitlab_client import GitLabClient
-from cerngitlab_mcp.exceptions import NotFoundError
 from cerngitlab_mcp.tools.utils import encode_project, resolve_ref, fetch_file
 
 
