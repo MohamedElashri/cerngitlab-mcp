@@ -222,20 +222,22 @@ class TestSearchCode:
         # First call: /projects/123/search returns 400 (no advanced search)
         httpx_mock.add_response(
             url=httpx.URL("https://gitlab.example.com/api/v4/projects/123/search",
-                          params={"search": "RooFit", "scope": "blobs", "per_page": "20"}),
+                          params={"search": "RooFit", "scope": "blobs", "per_page": "20", "page": "1"}),
             status_code=400,
             json={"error": "Scope supported only with advanced search"},
         )
         # Fallback: tree listing
         httpx_mock.add_response(
             url=httpx.URL("https://gitlab.example.com/api/v4/projects/123/repository/tree",
-                          params={"recursive": "true", "per_page": "500"}),
+                          params={"recursive": "true", "per_page": "200"}),
             json=[
                 {"name": "fit.py", "type": "blob", "path": "fit.py"},
                 {"name": "data.root", "type": "blob", "path": "data.root"},
             ],
         )
         # Fallback: fetch fit.py content (data.root is not searchable)
+        # Note: Since we use asyncio.gather, the order isn't guaranteed, but we only have 1 file here.
+        # TODO: Add a test for the case where we have multiple files to scan.
         httpx_mock.add_response(
             json=make_file_response("import ROOT\nws = ROOT.RooFit.workspace()\n", "fit.py"),
         )
@@ -244,6 +246,19 @@ class TestSearchCode:
         assert result["results"][0]["file_path"] == "fit.py"
         assert "RooFit" in result["results"][0]["data"]
         assert "note" in result
+
+    @pytest.mark.asyncio
+    async def test_search_code_pagination(self, client, httpx_mock):
+        httpx_mock.add_response(
+            url=httpx.URL("https://gitlab.example.com/api/v4/search", 
+                          params={"search": "test", "scope": "blobs", "per_page": "5", "page": "2"}),
+            json=[{"filename": "test.py", "path": "test.py", "data": "test", "project_id": 1, "ref": "main"}]
+        )
+        result = await search_code.handle(client, {"search_term": "test", "page": 2, "per_page": 5})
+        assert result["page"] == 2
+        assert result["per_page"] == 5
+        assert result["total_results"] == 1
+        assert result["results"][0]["file_path"] == "test.py"
 
 
 class TestGetWikiPages:
