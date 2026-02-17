@@ -90,14 +90,39 @@ Add to your `claude_desktop_config.json`:
 
 ### Claude Code
 
+**Project-specific (default)** — installs in the current directory's configuration:
+
 ```bash
 claude mcp add cerngitlab-mcp -- uvx cerngitlab-mcp
 ```
 
-To include authentication:
+**Global** — installs for your user account (works in all projects):
 
 ```bash
-claude mcp add cerngitlab-mcp -e CERNGITLAB_TOKEN=glpat-xxxxxxxxxxxx -- uvx cerngitlab-mcp
+claude mcp add --scope user cerngitlab-mcp -- uvx cerngitlab-mcp
+```
+
+To include authentication, add `-e CERNGITLAB_TOKEN=glpat-xxxxxxxxxxxx` before the `--`:
+
+```bash
+# Example: Global installation with token
+claude mcp add --scope user -e CERNGITLAB_TOKEN=glpat-xxxxxxxxxxxx cerngitlab-mcp -- uvx cerngitlab-mcp
+```
+
+**Manual Configuration** — you can also manually edit your global config at `~/.claude.json` (on Linux/macOS) or `%APPDATA%\Claude\claude.json` (on Windows):
+
+```json
+{
+  "mcpServers": {
+    "cerngitlab": {
+      "command": "uvx",
+      "args": ["cerngitlab-mcp"],
+      "env": {
+        "CERNGITLAB_TOKEN": "glpat-xxxxxxxxxxxx"
+      }
+    }
+  }
+}
 ```
 
 ### GitHub Copilot
