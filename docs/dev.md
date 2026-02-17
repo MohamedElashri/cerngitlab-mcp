@@ -2,10 +2,10 @@
 
 ## Tools Reference
 
-### Repository Discovery
+### Project Discovery
 
-#### `search_repositories`
-Search for public repositories by keywords, topics, or programming language.
+#### `search_projects`
+Search for public projects (which include repositories, issues, wikis) by keywords, topics, or programming language.
 
 | Parameter | Type | Required | Description |
 |---|---|---|---|
@@ -16,15 +16,17 @@ Search for public repositories by keywords, topics, or programming language.
 | `order` | string | no | `desc` or `asc` |
 | `per_page` | integer | no | Results count (1–100, default: 20) |
 
-#### `get_repository_info`
-Get detailed information about a specific repository including languages, statistics, and license.
+#### `get_project_info`
+Get detailed information about a specific project including languages, statistics, and license.
 
 | Parameter | Type | Required | Description |
 |---|---|---|---|
 | `project` | string | yes | Numeric ID or path (e.g. `lhcb/allen`) |
 
-#### `list_repository_files`
-Browse the file tree of a repository.
+### Repository Content
+
+#### `list_project_files`
+Browse the file tree of a project's repository.
 
 | Parameter | Type | Required | Description |
 |---|---|---|---|
@@ -33,8 +35,6 @@ Browse the file tree of a repository.
 | `ref` | string | no | Branch/tag/commit |
 | `recursive` | boolean | no | List recursively |
 | `per_page` | integer | no | Results count (default: 100) |
-
-### Code & Documentation Access
 
 #### `get_file_content`
 Retrieve file content with binary detection and syntax highlighting hints.
@@ -45,7 +45,7 @@ Retrieve file content with binary detection and syntax highlighting hints.
 | `file_path` | string | yes | Path within repository |
 | `ref` | string | no | Branch/tag/commit |
 
-#### `get_repository_readme`
+#### `get_project_readme`
 Get the README file, automatically trying common filenames (README.md, .rst, .txt, etc.).
 
 | Parameter | Type | Required | Description |
@@ -61,50 +61,41 @@ Search for code across repositories. Falls back to file-level grep when advanced
 | `search_term` | string | yes | Code/text to search for |
 | `project` | string | no | Limit to specific project |
 | `scope` | string | no | `blobs` (content) or `filenames` |
+| `page` | integer | no | Page number (default: 1) |
 | `per_page` | integer | no | Results count (default: 20) |
 
+### Context & Analysis
+
+#### `inspect_project`
+Comprehensive analysis of a project. Detects build systems (CMake, Make, Python, etc.), ecosystem dependencies (ROOT, Scipy, etc.), and CI/CD configuration.
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `project` | string | yes | Numeric ID or path |
+| `ref` | string | no | Branch/tag/commit |
+
+#### `search_issues`
+Search for issues and discussions in a project.
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `search_term` | string | yes | Keywords to search for |
+| `project` | string | no | Limit to specific project |
+| `state` | string | no | `opened`, `closed`, or `all` |
+| `per_page` | integer | no | Results count (default: 10) |
+
 #### `get_wiki_pages`
-Access repository wiki pages. **Requires authentication.**
+Access project wiki pages. **Requires authentication.**
 
 | Parameter | Type | Required | Description |
 |---|---|---|---|
 | `project` | string | yes | Numeric ID or path |
 | `page_slug` | string | no | Specific page slug (omit to list all) |
 
-### Dependency & Build Analysis
-
-#### `analyze_dependencies`
-Parse dependency files for Python, C++, and Fortran ecosystems.
-
-| Parameter | Type | Required | Description |
-|---|---|---|---|
-| `project` | string | yes | Numeric ID or path |
-| `ref` | string | no | Branch/tag/commit |
-
-Detects: `requirements.txt`, `pyproject.toml`, `setup.py`, `CMakeLists.txt`, `conda.yaml`, and more.
-
-#### `get_ci_config`
-Retrieve and analyze `.gitlab-ci.yml` configuration.
-
-| Parameter | Type | Required | Description |
-|---|---|---|---|
-| `project` | string | yes | Numeric ID or path |
-| `ref` | string | no | Branch/tag/commit |
-
-Returns raw YAML content plus structural analysis (stages, jobs, includes, variables).
-
-#### `get_build_config`
-Find and retrieve build configuration files (CMakeLists.txt, Makefile, setup.py, pyproject.toml, etc.).
-
-| Parameter | Type | Required | Description |
-|---|---|---|---|
-| `project` | string | yes | Numeric ID or path |
-| `ref` | string | no | Branch/tag/commit |
-
 ### Release & Version Tracking
 
 #### `list_releases`
-List releases from a repository.
+List releases for a project.
 
 | Parameter | Type | Required | Description |
 |---|---|---|---|
@@ -120,7 +111,7 @@ Get detailed information about a specific release.
 | `tag_name` | string | yes | Release tag (e.g. `v1.0.0`) |
 
 #### `list_tags`
-List repository tags with optional filtering.
+List project tags with optional filtering.
 
 | Parameter | Type | Required | Description |
 |---|---|---|---|

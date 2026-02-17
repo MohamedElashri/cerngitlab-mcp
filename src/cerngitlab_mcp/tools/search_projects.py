@@ -8,11 +8,11 @@ from cerngitlab_mcp.gitlab_client import GitLabClient
 
 
 TOOL_DEFINITION = Tool(
-    name="search_repositories",
+    name="search_projects",
     description=(
-        "Search for public repositories on CERN GitLab by keywords, topics, "
-        "or programming language. Useful for discovering HEP code, analysis "
-        "frameworks, and physics tools."
+        "Search for public CERN GitLab projects (which contain repositories, "
+        "issues, wikis, etc.) by keywords, topics, or programming language. "
+        "Useful for discovering HEP code, analysis frameworks, and physics tools."
     ),
     inputSchema={
         "type": "object",

@@ -62,7 +62,7 @@ async def handle(client: GitLabClient, arguments: dict) -> dict[str, Any]:
 
     params = {
         "search": search_term,
-        "scope": "issues",
+        "scope": "all",
         "state": state,
         "per_page": per_page,
     }

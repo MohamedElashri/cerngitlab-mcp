@@ -9,11 +9,10 @@ from cerngitlab_mcp.gitlab_client import GitLabClient
 
 
 TOOL_DEFINITION = Tool(
-    name="list_repository_files",
+    name="list_project_files",
     description=(
-        "List files and directories in a CERN GitLab repository. "
-        "Can browse from the root or a specific subdirectory. "
-        "Useful for understanding project structure before fetching specific files."
+        "List files and directories in a CERN GitLab project's repository. "
+        "Supports recursive listing and path specific lookups."
     ),
     inputSchema={
         "type": "object",

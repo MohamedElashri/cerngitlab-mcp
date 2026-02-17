@@ -199,21 +199,19 @@ CERNGITLAB_TOKEN=glpat-xxx uvx cerngitlab-mcp
 
 | Tool | Description | Auth required |
 |---|---|---|
-| `search_repositories` | Search public repositories by keywords, topics, or language | No |
-| `get_repository_info` | Get repository details (languages, stats, license) | No |
-| `list_repository_files` | Browse the file tree of a repository | No |
-| `get_file_content` | Retrieve file content with binary detection | No |
-| `get_repository_readme` | Get the README file (tries common filenames) | No |
-| `search_code` | Search for code across repositories | Yes* |
-| `search_issues` | Search for issues and discussions | Yes |
-| `get_wiki_pages` | Access repository wiki pages | Yes |
-| `inspect_project` | Analyze project structure, build system, dependencies, and CI | No |
-| `list_releases` | List releases from a repository | No |
+| `search_projects` | Search for public CERN GitLab projects (repositories) by keyword, topic, or language | No |
+| `get_project_info` | Get detailed project metadata (stars, description, languages, statistics) | No |
+| `list_project_files` | List files and directories in a project's repository | No |
+| `get_file_content` | Fetch the content of a specific file (includes binary detection) | No |
+| `get_project_readme` | Get the README content for a project | No |
+| `search_code` | Search for code within a specific project or globally | Yes* |
+| `search_issues` | Search for issues in a project | Yes |
+| `get_wiki_pages` | List wiki pages for a project | Yes |
+| `inspect_project` | Analyze project structure, build system, dependencies, and CI/CD | No |
+| `list_releases` | List releases for a project | No |
 | `get_release` | Get details of a specific release | No |
-| `list_tags` | List repository tags with optional filtering | No |
+| `list_tags` | List tags for a project | No |
 | `test_connectivity` | Test connection to the GitLab instance | No |
-
-\* `search_code` works without auth for project-scoped search (uses fallback grep). Global search requires authentication.
 
 For detailed parameter documentation, see [docs/dev.md](docs/dev.md).
 

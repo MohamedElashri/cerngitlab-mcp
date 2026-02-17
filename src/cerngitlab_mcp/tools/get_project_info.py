@@ -9,11 +9,11 @@ from cerngitlab_mcp.gitlab_client import GitLabClient
 
 
 TOOL_DEFINITION = Tool(
-    name="get_repository_info",
+    name="get_project_info",
     description=(
-        "Get detailed information about a specific CERN GitLab repository, "
-        "including description, languages, topics, activity, and statistics. "
-        "Accepts either a numeric project ID or a full project path (e.g. 'atlas/athena')."
+        "Get detailed information about a specific CERN GitLab project "
+        "(metadata, statistics, description). Accepts either a numeric project ID "
+        "or a full project path (e.g. 'atlas/athena')."
     ),
     inputSchema={
         "type": "object",

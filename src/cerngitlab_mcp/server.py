@@ -15,16 +15,16 @@ from cerngitlab_mcp.logging import setup_logging
 from cerngitlab_mcp.tools import (
     get_file_content,
     get_release,
-    get_repository_info,
-    get_repository_readme,
+    get_project_info,
+    get_project_readme,
     get_wiki_pages,
     inspect_project,
     list_releases,
-    list_repository_files,
+    list_project_files,
     list_tags,
     search_code,
     search_issues,
-    search_repositories,
+    search_projects,
 )
 
 
@@ -77,11 +77,11 @@ async def list_tools() -> list[Tool]:
     """Return the list of available tools."""
     return [
         _TEST_CONNECTIVITY_TOOL,
-        search_repositories.TOOL_DEFINITION,
-        get_repository_info.TOOL_DEFINITION,
-        list_repository_files.TOOL_DEFINITION,
+        search_projects.TOOL_DEFINITION,
+        get_project_info.TOOL_DEFINITION,
+        list_project_files.TOOL_DEFINITION,
         get_file_content.TOOL_DEFINITION,
-        get_repository_readme.TOOL_DEFINITION,
+        get_project_readme.TOOL_DEFINITION,
         search_code.TOOL_DEFINITION,
         search_issues.TOOL_DEFINITION,
         get_wiki_pages.TOOL_DEFINITION,
@@ -98,11 +98,11 @@ async def list_tools() -> list[Tool]:
 
 _TOOL_HANDLERS = {
     "test_connectivity": "_handle_test_connectivity",
-    "search_repositories": search_repositories,
-    "get_repository_info": get_repository_info,
-    "list_repository_files": list_repository_files,
+    "search_projects": search_projects,
+    "get_project_info": get_project_info,
+    "list_project_files": list_project_files,
     "get_file_content": get_file_content,
-    "get_repository_readme": get_repository_readme,
+    "get_project_readme": get_project_readme,
     "search_code": search_code,
     "search_issues": search_issues,
     "get_wiki_pages": get_wiki_pages,

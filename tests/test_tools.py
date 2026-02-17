@@ -8,16 +8,16 @@ from cerngitlab_mcp.exceptions import NotFoundError
 from cerngitlab_mcp.tools import (
     get_file_content,
     get_release,
-    get_repository_info,
-    get_repository_readme,
+    get_project_info,
+    get_project_readme,
     get_wiki_pages,
     inspect_project,
     list_releases,
-    list_repository_files,
+    list_project_files,
     list_tags,
     search_code,
     search_issues,
-    search_repositories,
+    search_projects,
 )
 from cerngitlab_mcp.tools.utils import encode_project
 
@@ -43,7 +43,7 @@ class TestEncodeProject:
 # Repository discovery tools
 # ---------------------------------------------------------------------------
 
-class TestSearchRepositories:
+class TestSearchProjects:
     @pytest.mark.asyncio
     async def test_returns_matching_projects(self, client, httpx_mock):
         httpx_mock.add_response(
@@ -59,7 +59,7 @@ class TestSearchRepositories:
                  "visibility": "public"},
             ],
         )
-        result = await search_repositories.handle(client, {"query": "root", "per_page": 5})
+        result = await search_projects.handle(client, {"query": "root", "per_page": 5})
         assert len(result) == 1
         assert result[0]["name"] == "proj1"
         assert result[0]["star_count"] == 5
@@ -67,11 +67,11 @@ class TestSearchRepositories:
     @pytest.mark.asyncio
     async def test_returns_empty_list_when_no_matches(self, client, httpx_mock):
         httpx_mock.add_response(json=[])
-        result = await search_repositories.handle(client, {"query": "nonexistent"})
+        result = await search_projects.handle(client, {"query": "nonexistent"})
         assert result == []
 
 
-class TestGetRepositoryInfo:
+class TestGetProjectInfo:
     @pytest.mark.asyncio
     async def test_returns_project_details_with_languages(self, client, httpx_mock):
         httpx_mock.add_response(
@@ -93,7 +93,7 @@ class TestGetRepositoryInfo:
             url=httpx.URL("https://gitlab.example.com/api/v4/projects/atlas%2Fathena/languages"),
             json={"C++": 80.0, "Python": 15.0, "CMake": 5.0},
         )
-        result = await get_repository_info.handle(client, {"project": "atlas/athena"})
+        result = await get_project_info.handle(client, {"project": "atlas/athena"})
         assert result["name"] == "athena"
         assert result["languages"]["C++"] == 80.0
         assert result["statistics"]["commit_count"] == 1000
@@ -102,22 +102,22 @@ class TestGetRepositoryInfo:
     async def test_raises_not_found_for_missing_project(self, client, httpx_mock):
         httpx_mock.add_response(status_code=404, json={"message": "not found"})
         with pytest.raises(NotFoundError):
-            await get_repository_info.handle(client, {"project": "no/exist"})
+            await get_project_info.handle(client, {"project": "no/exist"})
 
     @pytest.mark.asyncio
     async def test_raises_value_error_when_project_empty(self, client):
         with pytest.raises(ValueError, match="project"):
-            await get_repository_info.handle(client, {"project": ""})
+            await get_project_info.handle(client, {"project": ""})
 
 
-class TestListRepositoryFiles:
+class TestListProjectFiles:
     @pytest.mark.asyncio
     async def test_separates_directories_and_files(self, client, httpx_mock):
         httpx_mock.add_response(json=[
             {"name": "src", "type": "tree", "path": "src", "mode": "040000"},
             {"name": "README.md", "type": "blob", "path": "README.md", "mode": "100644"},
         ])
-        result = await list_repository_files.handle(client, {"project": "123"})
+        result = await list_project_files.handle(client, {"project": "123"})
         assert result["total_entries"] == 2
         assert len(result["directories"]) == 1
         assert len(result["files"]) == 1
@@ -171,12 +171,12 @@ class TestGetFileContent:
             await get_file_content.handle(client, {"project": "123", "file_path": ""})
 
 
-class TestGetRepositoryReadme:
+class TestGetProjectReadme:
     @pytest.mark.asyncio
     async def test_finds_readme_md(self, client, httpx_mock):
         httpx_mock.add_response(json={"default_branch": "main"})
         httpx_mock.add_response(json=make_file_response("# Hello", "README.md"))
-        result = await get_repository_readme.handle(client, {"project": "123"})
+        result = await get_project_readme.handle(client, {"project": "123"})
         assert result["file_name"] == "README.md"
         assert result["format"] == "markdown"
         assert "# Hello" in result["content"]
@@ -186,7 +186,7 @@ class TestGetRepositoryReadme:
         httpx_mock.add_response(json={"default_branch": "main"})
         for _ in range(8):
             httpx_mock.add_response(status_code=404, json={"message": "not found"})
-        result = await get_repository_readme.handle(client, {"project": "123"})
+        result = await get_project_readme.handle(client, {"project": "123"})
         assert result.get("content") is None
         assert "error" in result
 

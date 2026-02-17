@@ -13,19 +13,18 @@ import sys
 from cerngitlab_mcp.config import get_settings
 from cerngitlab_mcp.gitlab_client import GitLabClient
 from cerngitlab_mcp.tools import (
-    analyze_dependencies,
-    get_build_config,
-    get_ci_config,
     get_file_content,
     get_release,
-    get_repository_info,
-    get_repository_readme,
+    get_project_info,
+    get_project_readme,
     get_wiki_pages,
+    inspect_project,
     list_releases,
-    list_repository_files,
+    list_project_files,
     list_tags,
     search_code,
-    search_repositories,
+    search_issues,
+    search_projects,
 )
 from cerngitlab_mcp.tools.utils import encode_project
 
@@ -44,7 +43,7 @@ def _sub(title: str) -> None:
 
 async def find_test_project(client: GitLabClient) -> dict:
     """Find a public project suitable for integration testing."""
-    projects = await search_repositories.handle(client, {"query": "root", "per_page": 5})
+    projects = await search_projects.handle(client, {"query": "root", "per_page": 5})
     if not projects:
         print("ERROR: No public projects found on CERN GitLab")
         sys.exit(1)
@@ -83,47 +82,47 @@ async def test_connectivity(client: GitLabClient) -> None:
 
 
 # ---------------------------------------------------------------------------
-# Repository discovery
+# Project discovery
 # ---------------------------------------------------------------------------
 
-async def test_search_repositories(client: GitLabClient) -> None:
-    _header("search_repositories")
+async def test_search_projects(client: GitLabClient) -> None:
+    _header("search_projects")
 
     _sub("keyword search: 'root'")
-    result = await search_repositories.handle(client, {"query": "root", "per_page": 5})
+    result = await search_projects.handle(client, {"query": "root", "per_page": 5})
     print(f"  Found {len(result)} projects")
     for p in result[:3]:
         print(f"    {p['path_with_namespace']}: {(p.get('description') or '')[:60]}")
 
     _sub("language filter: python")
-    result = await search_repositories.handle(client, {
+    result = await search_projects.handle(client, {
         "query": "analysis", "language": "python", "per_page": 5,
     })
     print(f"  Found {len(result)} Python projects")
 
     _sub("sort by stars")
-    result = await search_repositories.handle(client, {
+    result = await search_projects.handle(client, {
         "query": "physics", "sort_by": "stars", "per_page": 5,
     })
     print(f"  Found {len(result)} projects")
 
 
-async def test_get_repository_info(client: GitLabClient, project: str, project_id: str) -> None:
-    _header(f"get_repository_info ({project})")
-    result = await get_repository_info.handle(client, {"project": project})
+async def test_get_project_info(client: GitLabClient, project: str, project_id: str) -> None:
+    _header(f"get_project_info ({project})")
+    result = await get_project_info.handle(client, {"project": project})
     print(f"  Name: {result['name']}")
     print(f"  Languages: {result['languages']}")
     print(f"  Stars: {result['star_count']}")
 
     _sub(f"by numeric ID ({project_id})")
-    result2 = await get_repository_info.handle(client, {"project": project_id})
+    result2 = await get_project_info.handle(client, {"project": project_id})
     print(f"  Resolved: {result2['path_with_namespace']}")
 
 
-async def test_list_repository_files(client: GitLabClient, project: str) -> None:
-    _header(f"list_repository_files ({project})")
+async def test_list_project_files(client: GitLabClient, project: str) -> None:
+    _header(f"list_project_files ({project})")
 
-    result = await list_repository_files.handle(client, {"project": project})
+    result = await list_project_files.handle(client, {"project": project})
     print(f"  Directories: {len(result['directories'])}")
     print(f"  Files: {len(result['files'])}")
     for d in result["directories"][:5]:
@@ -134,7 +133,7 @@ async def test_list_repository_files(client: GitLabClient, project: str) -> None
     if result["directories"]:
         subdir = result["directories"][0]["path"]
         _sub(f"subdirectory: {subdir}")
-        sub = await list_repository_files.handle(client, {"project": project, "path": subdir})
+        sub = await list_project_files.handle(client, {"project": project, "path": subdir})
         print(f"  Entries: {sub['total_entries']}")
 
 
@@ -164,9 +163,9 @@ async def test_get_file_content(client: GitLabClient, project: str) -> None:
         print(f"  Not found: {e}")
 
 
-async def test_get_repository_readme(client: GitLabClient, project: str) -> None:
-    _header(f"get_repository_readme ({project})")
-    result = await get_repository_readme.handle(client, {"project": project})
+async def test_get_project_readme(client: GitLabClient, project: str) -> None:
+    _header(f"get_project_readme ({project})")
+    result = await get_project_readme.handle(client, {"project": project})
     if result.get("content"):
         print(f"  File: {result['file_name']}, format: {result['format']}, size: {result['size']} bytes")
     else:
@@ -202,37 +201,43 @@ async def test_get_wiki_pages(client: GitLabClient, project: str) -> None:
 # Dependency and build analysis
 # ---------------------------------------------------------------------------
 
-async def test_analyze_dependencies(client: GitLabClient, project: str) -> None:
-    _header(f"analyze_dependencies ({project})")
-    result = await analyze_dependencies.handle(client, {"project": project})
-    print(f"  Ecosystems: {result['ecosystems_detected']}")
-    print(f"  Files found: {result['files_found']}")
-    for dep_file in result["dependency_files"]:
-        print(f"    {dep_file['file']} ({dep_file['ecosystem']}): {dep_file['dependencies_count']} deps")
-        for dep in dep_file["dependencies"][:3]:
-            print(f"      - {dep['name']} {dep.get('version_spec', '')}")
+# ---------------------------------------------------------------------------
+# Interaction and context
+# ---------------------------------------------------------------------------
+
+async def test_search_issues(client: GitLabClient, project: str) -> None:
+    _header(f"search_issues ({project})")
+    # Search for something likely to exist
+    result = await search_issues.handle(client, {"search_term": "fix", "project": project})
+    print(f"  Found {result['count']} issues matching 'fix'")
+    for issue in result['issues'][:3]:
+        print(f"    #{issue['iid']}: {issue['title']}")
 
 
-async def test_get_ci_config(client: GitLabClient, project: str) -> None:
-    _header(f"get_ci_config ({project})")
-    result = await get_ci_config.handle(client, {"project": project})
-    if not result.get("found"):
-        print(f"  {result.get('error', 'Not found')}")
-        return
-    print(f"  Size: {result['size']} bytes")
-    analysis = result.get("analysis", {})
-    if analysis.get("stages"):
-        print(f"  Stages: {analysis['stages']}")
-    if analysis.get("jobs"):
-        print(f"  Jobs: {analysis['jobs'][:10]}")
+# ---------------------------------------------------------------------------
+# Project analysis
+# ---------------------------------------------------------------------------
 
-
-async def test_get_build_config(client: GitLabClient, project: str) -> None:
-    _header(f"get_build_config ({project})")
-    result = await get_build_config.handle(client, {"project": project})
-    print(f"  Build systems: {result['build_systems_detected']}")
-    for bf in result["build_files"]:
-        print(f"    {bf['file']} ({bf['build_system']}): {bf['size']} bytes")
+async def test_inspect_project(client: GitLabClient, project: str) -> None:
+    _header(f"inspect_project ({project})")
+    result = await inspect_project.handle(client, {"project": project})
+    
+    print(f"  Ecosystems: {result['ecosystems']}")
+    print(f"  Build systems: {result['build_systems']}")
+    
+    ci = result.get("ci_config", {})
+    if ci.get("found"):
+        print(f"  CI Config: Found ({ci.get('path', 'unknown')})")
+        analysis = ci.get("analysis", {})
+        if analysis.get("stages"):
+            print(f"    Stages: {analysis['stages']}")
+    else:
+        print("  CI Config: Not found")
+        
+    print(f"  Dependencies found: {sum(len(f['items']) for f in result['dependencies'])}")
+    for f in result['dependencies']:
+        if f['items']:
+            print(f"    {f['source_file']}: {len(f['items'])} items")
 
 
 # ---------------------------------------------------------------------------
@@ -309,20 +314,21 @@ async def main() -> None:
         print(f"\nUsing general test project: {project} (id={project_id})")
 
         # Repository discovery
-        await test_search_repositories(client)
-        await test_get_repository_info(client, project, project_id)
-        await test_list_repository_files(client, project)
+        await test_search_projects(client)
+        await test_get_project_info(client, project, project_id)
+        await test_list_project_files(client, project)
 
         # Code and documentation
         await test_get_file_content(client, project)
-        await test_get_repository_readme(client, project)
+        await test_get_project_readme(client, project)
         await test_search_code(client, project)
         await test_get_wiki_pages(client, project)
+        
+        # Context
+        await test_search_issues(client, project)
 
-        # Dependency and build analysis
-        await test_analyze_dependencies(client, project)
-        await test_get_ci_config(client, project)
-        await test_get_build_config(client, project)
+        # Analysis
+        await test_inspect_project(client, project)
 
         # Release and version tools — need a project with tags
         tag_project, known_tag = await find_project_with_tags(client)

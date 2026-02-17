@@ -25,10 +25,10 @@ _README_CANDIDATES = [
 
 
 TOOL_DEFINITION = Tool(
-    name="get_repository_readme",
+    name="get_project_readme",
     description=(
-        "Get the README file content from a CERN GitLab repository. "
-        "Automatically detects common README filenames (README.md, README.rst, etc.). "
+        "Get the README file content for a CERN GitLab project. "
+        "Automatically detects standard README filenames (README.md, README.rst, etc.). "
         "Returns the raw content — useful for understanding what a project does."
     ),
     inputSchema={
