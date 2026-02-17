@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.3] - 2026-02-17
+
+### Breaking Changes
+- **Tool Renames**: Renamed several tools to align with GitLab terminology:
+    - `search_repositories` -> `search_projects`
+    - `get_repository_info` -> `get_project_info`
+    - `list_repository_files` -> `list_project_files`
+    - `get_repository_readme` -> `get_project_readme`
+
+### Documentation
+- Updated README and docs to reflect the new tool names.
+
 ## [0.1.2] - 2026-02-17
 
 ### Added
