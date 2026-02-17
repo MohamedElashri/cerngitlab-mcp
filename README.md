@@ -10,9 +10,9 @@
 
 ## Features
 
-- **14 MCP tools** for searching, browsing, and analyzing CERN GitLab repositories
+- **13 MCP tools** for searching, browsing, and analyzing CERN GitLab repositories
 - **Public access** — works without authentication for public repositories
-- **HEP-focused** — dependency parsing for Python and C++ ecosystems, binary detection for `.root` files
+- **HEP-focused** — dependency parsing for Python and C++ ecosystems, binary detection for `.root` files, issue search
 - **Robust** — rate limiting, retries with exponential backoff, graceful error handling
 
 ## Installation
@@ -66,7 +66,7 @@ To create a token:
 2. Create a token with `read_api` scope
 3. Set `CERNGITLAB_TOKEN=glpat-xxxxxxxxxxxx`
 
-> **Note:** The code search (`search_code`) and wiki (`get_wiki_pages`) tools require authentication on CERN GitLab.
+> **Note:** The code search (`search_code`), issue search (`search_issues`), and wiki (`get_wiki_pages`) tools require authentication on CERN GitLab.
 
 ## Usage
 
@@ -205,10 +205,9 @@ CERNGITLAB_TOKEN=glpat-xxx uvx cerngitlab-mcp
 | `get_file_content` | Retrieve file content with binary detection | No |
 | `get_repository_readme` | Get the README file (tries common filenames) | No |
 | `search_code` | Search for code across repositories | Yes* |
+| `search_issues` | Search for issues and discussions | Yes |
 | `get_wiki_pages` | Access repository wiki pages | Yes |
-| `analyze_dependencies` | Parse dependency files (Python, C++, Fortran) | No |
-| `get_ci_config` | Retrieve and analyze `.gitlab-ci.yml` | No |
-| `get_build_config` | Find build config files (CMake, Make, setuptools, etc.) | No |
+| `inspect_project` | Analyze project structure, build system, dependencies, and CI | No |
 | `list_releases` | List releases from a repository | No |
 | `get_release` | Get details of a specific release | No |
 | `list_tags` | List repository tags with optional filtering | No |
@@ -216,7 +215,7 @@ CERNGITLAB_TOKEN=glpat-xxx uvx cerngitlab-mcp
 
 \* `search_code` works without auth for project-scoped search (uses fallback grep). Global search requires authentication.
 
-For detailed parameter documentation, see [dev.md](dev.md).
+For detailed parameter documentation, see [docs/dev.md](docs/dev.md).
 
 ## Example Prompts
 
@@ -229,21 +228,21 @@ For detailed parameter documentation, see [dev.md](dev.md).
 ### Find fitting examples
 > "Search for repositories on CERN GitLab that use RooFit and show me example fitting code"
 
-### Check dependencies
-> "What are the dependencies of the lhcb/allen project? Show me the CMakeLists.txt and any Python requirements"
+### Analyze a project structure
+> "Inspect the lhcb/allen project to understand its build system, dependencies, and CI pipeline configuration"
+
+### Find usage context
+> "Search for issues related to 'segmentation fault' in the atlas/athena project to see if others have encountered this"
 
 ### Track releases
 > "List the recent releases of lhcb/DaVinci and show me the release notes for the latest version"
-
-### Explore CI/CD
-> "Get the CI/CD configuration of the lhcb/allen project and explain the pipeline stages"
 
 ### Find framework configurations
 > "Search for Gaudi framework configuration files on CERN GitLab and show me examples"
 
 ## Development
 
-See [dev.md](dev.md) for development setup, project structure, testing, and release instructions.
+See [docs/dev.md](docs/dev.md) for development setup, project structure, testing, and release instructions.
 
 ## License
 

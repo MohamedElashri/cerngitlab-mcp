@@ -6,18 +6,17 @@ import pytest
 
 from cerngitlab_mcp.exceptions import NotFoundError
 from cerngitlab_mcp.tools import (
-    analyze_dependencies,
-    get_build_config,
-    get_ci_config,
     get_file_content,
     get_release,
     get_repository_info,
     get_repository_readme,
     get_wiki_pages,
+    inspect_project,
     list_releases,
     list_repository_files,
     list_tags,
     search_code,
+    search_issues,
     search_repositories,
 )
 from cerngitlab_mcp.tools.utils import encode_project
@@ -279,84 +278,73 @@ class TestGetWikiPages:
 
 
 # ---------------------------------------------------------------------------
-# Dependency and build analysis tools
+# Interaction and context tools
 # ---------------------------------------------------------------------------
 
-class TestAnalyzeDependencies:
+class TestSearchIssues:
+    @pytest.mark.asyncio
+    async def test_search_issues(self, client, httpx_mock):
+        httpx_mock.add_response(json=[
+            {"title": "Bug", "description": "Fix me", "state": "opened", "web_url": "http://x", "created_at": "2024-01-01"},
+        ])
+        result = await search_issues.handle(client, {"search_term": "Bug", "project": "123"})
+        assert result["count"] == 1
+        assert result["issues"][0]["title"] == "Bug"
+
+    @pytest.mark.asyncio
+    async def test_search_issues_auth_error(self, client, httpx_mock):
+        httpx_mock.add_response(status_code=401, json={"message": "Unauthorized"})
+        result = await search_issues.handle(client, {"search_term": "Bug", "project": "123"})
+        assert "error" in result
+
+
+# ---------------------------------------------------------------------------
+# Dependency and integration analysis tools
+# ---------------------------------------------------------------------------
+
+class TestInspectProject:
     @pytest.mark.httpx_mock(can_send_already_matched_responses=True)
     @pytest.mark.asyncio
-    async def test_parses_requirements_txt(self, client, httpx_mock):
+    async def test_inspect_project_combines_analysis(self, client, httpx_mock):
         httpx_mock.add_response(json={"default_branch": "main"})
-        reqs = "numpy>=1.20\nscipy\n# comment\nroot_numpy==4.0"
+        
+        # Specific file hits added BEFORE generic mocks
         httpx_mock.add_response(
-            url=httpx.URL("https://gitlab.example.com/api/v4/projects/123/repository/files/requirements.txt",
-                          params={"ref": "main"}),
-            json=make_file_response(reqs, "requirements.txt"),
+            url=httpx.URL("https://gitlab.example.com/api/v4/projects/123/repository/files/CMakeLists.txt", params={"ref": "main"}),
+            json=make_file_response("cmake_minimum_required(VERSION 3.16)\nfind_package(ROOT)", "CMakeLists.txt")
         )
+
+        # Responses for file checks - mostly 404s
         httpx_mock.add_response(status_code=404, json={"message": "not found"})
-        result = await analyze_dependencies.handle(client, {"project": "123"})
-        assert "python" in result["ecosystems_detected"]
-        deps = result["dependency_files"][0]["dependencies"]
-        names = [d["name"] for d in deps]
-        assert "numpy" in names
-        assert "scipy" in names
-        assert "root_numpy" in names
+
+        result = await inspect_project.handle(client, {"project": "123"})
+        
+        assert "cmake" in result["build_systems"]
+        assert "cpp" in result["ecosystems"] 
+        
+        deps = [d for d in result["dependencies"] if d["source_file"] == "CMakeLists.txt"]
+        assert len(deps) >= 1
+        assert deps[0]["items"][0]["name"] == "ROOT"
 
     @pytest.mark.httpx_mock(can_send_already_matched_responses=True)
     @pytest.mark.asyncio
-    async def test_parses_cmake_find_package(self, client, httpx_mock):
+    async def test_inspect_project_ci_analysis(self, client, httpx_mock):
         httpx_mock.add_response(json={"default_branch": "main"})
-        cmake = "find_package(ROOT 6.28 REQUIRED)\nfind_package(Geant4)"
+        
+        # Specific file hits added BEFORE generic mocks
         httpx_mock.add_response(
-            url=httpx.URL("https://gitlab.example.com/api/v4/projects/123/repository/files/CMakeLists.txt",
-                          params={"ref": "main"}),
-            json=make_file_response(cmake, "CMakeLists.txt"),
+            url=httpx.URL("https://gitlab.example.com/api/v4/projects/123/repository/files/.gitlab-ci.yml", params={"ref": "main"}),
+            json=make_file_response("stages:\n  - build\n\nbuild_job:\n  script: echo", ".gitlab-ci.yml")
         )
+        
+        # Responses for file checks - mostly 404s
         httpx_mock.add_response(status_code=404, json={"message": "not found"})
-        result = await analyze_dependencies.handle(client, {"project": "123"})
-        assert "cpp" in result["ecosystems_detected"]
-        found_cmake = [f for f in result["dependency_files"] if f["file"] == "CMakeLists.txt"]
-        assert len(found_cmake) >= 1
-        deps = found_cmake[0]["dependencies"]
-        names = [d["name"] for d in deps]
-        assert "ROOT" in names
-        assert "Geant4" in names
 
-
-class TestGetCiConfig:
-    @pytest.mark.asyncio
-    async def test_parses_stages_and_jobs(self, client, httpx_mock):
-        httpx_mock.add_response(json={"default_branch": "main"})
-        ci_yaml = "stages:\n  - build\n  - test\n\nbuild:\n  script: make\n"
-        httpx_mock.add_response(json=make_file_response(ci_yaml, ".gitlab-ci.yml"))
-        result = await get_ci_config.handle(client, {"project": "123"})
-        assert result["found"] is True
-        assert "build" in result["analysis"]["stages"]
-        assert "test" in result["analysis"]["stages"]
-
-    @pytest.mark.asyncio
-    async def test_returns_not_found_when_missing(self, client, httpx_mock):
-        httpx_mock.add_response(json={"default_branch": "main"})
-        httpx_mock.add_response(status_code=404, json={"message": "not found"})
-        result = await get_ci_config.handle(client, {"project": "123"})
-        assert result["found"] is False
-
-
-class TestGetBuildConfig:
-    @pytest.mark.httpx_mock(can_send_already_matched_responses=True)
-    @pytest.mark.asyncio
-    async def test_detects_cmake_build_system(self, client, httpx_mock):
-        httpx_mock.add_response(json={"default_branch": "main"})
-        cmake = "cmake_minimum_required(VERSION 3.16)"
-        httpx_mock.add_response(
-            url=httpx.URL("https://gitlab.example.com/api/v4/projects/123/repository/files/CMakeLists.txt",
-                          params={"ref": "main"}),
-            json=make_file_response(cmake, "CMakeLists.txt"),
-        )
-        httpx_mock.add_response(status_code=404, json={"message": "not found"})
-        result = await get_build_config.handle(client, {"project": "123"})
-        assert "cmake" in result["build_systems_detected"]
-        assert result["files_found"] >= 1
+        result = await inspect_project.handle(client, {"project": "123"})
+        
+        assert result["ci_config"]["found"] is True
+        assert "build" in result["ci_config"]["analysis"]["stages"]
+        assert "build" in result["ci_config"]["analysis"]["stages"]
 
 
 # ---------------------------------------------------------------------------

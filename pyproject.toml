@@ -1,6 +1,6 @@
 [project]
 name = "cerngitlab-mcp"
-version = "0.1.1"
+version = "0.1.2"
 description = "MCP server for CERN GitLab - code discovery, documentation access, and usage examples for HEP projects"
 readme = "README.md"
 authors = [
@@ -32,6 +32,7 @@ dependencies = [
 Homepage = "https://github.com/MohamedElashri/cerngitlab-mcp"
 Repository = "https://github.com/MohamedElashri/cerngitlab-mcp"
 Issues = "https://github.com/MohamedElashri/cerngitlab-mcp/issues"
+Changelog = "https://github.com/MohamedElashri/cerngitlab-mcp/blob/main/docs/CHANGELOG.md"
 Icon = "https://raw.githubusercontent.com/MohamedElashri/cerngitlab-mcp/main/icons/icon.svg"
 
 [project.scripts]
