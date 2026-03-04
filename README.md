@@ -10,7 +10,7 @@
 
 ## Features
 
-- **13 MCP tools** for searching, browsing, and analyzing CERN GitLab repositories
+- **14 MCP tools** for searching, browsing, and analyzing CERN GitLab repositories
 - **Public access** — works without authentication for public repositories
 - **HEP-focused** — dependency parsing for Python and C++ ecosystems, binary detection for `.root` files, issue search
 - **Robust** — rate limiting, retries with exponential backoff, graceful error handling
@@ -215,6 +215,7 @@ CERNGITLAB_TOKEN=glpat-xxx uvx cerngitlab-mcp
 | `get_file_content` | Fetch the content of a specific file (includes binary detection) | No |
 | `get_project_readme` | Get the README content for a project | No |
 | `search_code` | Search for code within a specific project or globally | Yes* |
+| `search_lhcb_stack` | Search for code within an LHCb software stack (e.g., 'sim11'), with automatic Git ref resolution | Yes* |
 | `search_issues` | Search for issues in a project | Yes |
 | `get_wiki_pages` | List wiki pages for a project | Yes |
 | `inspect_project` | Analyze project structure, build system, dependencies, and CI/CD | No |
@@ -235,6 +236,9 @@ For detailed parameter documentation, see [docs/dev.md](docs/dev.md).
 
 ### Find fitting examples
 > "Search for repositories on CERN GitLab that use RooFit and show me example fitting code"
+
+### View LHCb software stack code
+> "Search the LHCb sim11 stack for the initialization routines in the Boole project"
 
 ### Analyze a project structure
 > "Inspect the lhcb/allen project to understand its build system, dependencies, and CI pipeline configuration"

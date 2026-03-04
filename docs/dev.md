@@ -65,6 +65,19 @@ Search for code across repositories. Falls back to file-level grep when advanced
 | `page` | integer | no | Page number (default: 1) |
 | `per_page` | integer | no | Results count (default: 20) |
 
+#### `search_lhcb_stack`
+Search for code snippets within a specific LHCb software stack (e.g., 'sim11'). Automatically resolves the correct Git references for projects in that stack using the LHCb nightly API. **Requires authentication for global search.**
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `search_term` | string | yes | Code/text to search for |
+| `stack` | string | yes | Name of the software stack (e.g., 'sim11') |
+| `project` | string | no | Limit to specific project |
+| `scope` | string | no | `blobs` (content) or `filenames` |
+| `ref` | string | no | Override the Git branch/tag. If omitted, automatically uses the resolved branch matching the stack. |
+| `page` | integer | no | Page number (default: 1) |
+| `per_page` | integer | no | Results count (default: 20) |
+
 ### Context & Analysis
 
 #### `inspect_project`
