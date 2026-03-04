@@ -23,6 +23,7 @@ from cerngitlab_mcp.tools import (
     list_project_files,
     list_tags,
     search_code,
+    search_lhcb_stack,
     search_issues,
     search_projects,
 )
@@ -83,6 +84,7 @@ async def list_tools() -> list[Tool]:
         get_file_content.TOOL_DEFINITION,
         get_project_readme.TOOL_DEFINITION,
         search_code.TOOL_DEFINITION,
+        search_lhcb_stack.TOOL_DEFINITION,
         search_issues.TOOL_DEFINITION,
         get_wiki_pages.TOOL_DEFINITION,
         inspect_project.TOOL_DEFINITION,
@@ -104,6 +106,7 @@ _TOOL_HANDLERS = {
     "get_file_content": get_file_content,
     "get_project_readme": get_project_readme,
     "search_code": search_code,
+    "search_lhcb_stack": search_lhcb_stack,
     "search_issues": search_issues,
     "get_wiki_pages": get_wiki_pages,
     "inspect_project": inspect_project,

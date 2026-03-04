@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.5] - 2026-03-05
+
+### Added
+- **`search_lhcb_stack` Tool**: Added a dedicated tool for searching code across `LHCb` software stacks (e.g., 'sim11'). Automatically resolves the correct Git references for projects in that stack using the nightly API, so users no longer need to manually find and provide `ref` parameters.
+- **Stack Resolver**: Implemented internal API client to resolve `LHCb` nightly stack properties. Includes automatic fallback if the API is down.
+
 ## [0.1.4] - 2026-03-04
 
 ### Added

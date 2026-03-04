@@ -1,6 +1,6 @@
 [project]
 name = "cerngitlab-mcp"
-version = "0.1.4"
+version = "0.1.5"
 description = "MCP server for CERN GitLab - code discovery, documentation access, and usage examples for HEP projects"
 readme = "README.md"
 authors = [
@@ -53,6 +53,6 @@ dev = [
 [tool.pytest.ini_options]
 asyncio_mode = "strict"
 testpaths = ["tests"]
-python_files = ["test_tools.py"]
+python_files = ["test_tools.py", "test_stack_resolver.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]

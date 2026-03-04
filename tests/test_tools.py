@@ -18,6 +18,7 @@ from cerngitlab_mcp.tools import (
     search_code,
     search_issues,
     search_projects,
+    search_lhcb_stack,
 )
 from cerngitlab_mcp.tools.utils import encode_project
 
@@ -258,6 +259,63 @@ class TestSearchCode:
         assert result["per_page"] == 5
         assert result["total_results"] == 1
         assert result["results"][0]["file_path"] == "test.py"
+
+
+class TestSearchLhcbStack:
+    @pytest.mark.asyncio
+    async def test_raises_value_error_when_stack_empty(self, client):
+        with pytest.raises(ValueError, match="'stack' parameter is required"):
+            await search_lhcb_stack.handle(client, {"search_term": "test", "stack": ""})
+
+    @pytest.mark.asyncio
+    async def test_resolves_stack_and_delegates_to_search_code(self, client, httpx_mock, monkeypatch):
+        # Mock resolve_stack to avoid hitting real API
+        async def mock_resolve_stack(stack_name):
+            return {"Boole": "sim11"}
+        
+        monkeypatch.setattr(search_lhcb_stack, "resolve_stack", mock_resolve_stack)
+        
+        # We need to mock the underlying search_code API call that it delegates to
+        # By default, search_code will try to call GitLab. Here we just want to ensure
+        # that it uses the resolved ref.
+        httpx_mock.add_response(
+            url=httpx.URL("https://gitlab.example.com/api/v4/projects/lhcb%2FBoole/search", 
+                          params={"search": "test", "scope": "blobs", "per_page": "20", "page": "1", "ref": "sim11"}),
+            json=[{"filename": "test.py", "path": "test.py", "data": "test", "project_id": 1, "ref": "sim11"}]
+        )
+        
+        result = await search_lhcb_stack.handle(client, {
+            "search_term": "test", 
+            "stack": "sim11",
+            "project": "lhcb/Boole"
+        })
+        
+        assert result["total_results"] == 1
+        assert result["results"][0]["ref"] == "sim11"
+
+    @pytest.mark.asyncio
+    async def test_explicit_ref_overrides_stack_ref(self, client, httpx_mock, monkeypatch):
+        # Mock resolve_stack securely
+        async def mock_resolve_stack(stack_name):
+            return {"Boole": "sim11"}
+        
+        monkeypatch.setattr(search_lhcb_stack, "resolve_stack", mock_resolve_stack)
+        
+        httpx_mock.add_response(
+            url=httpx.URL("https://gitlab.example.com/api/v4/projects/lhcb%2FBoole/search", 
+                          params={"search": "test", "scope": "blobs", "per_page": "20", "page": "1", "ref": "custom-ref"}),
+            json=[{"filename": "test.py", "path": "test.py", "data": "test", "project_id": 1, "ref": "custom-ref"}]
+        )
+        
+        result = await search_lhcb_stack.handle(client, {
+            "search_term": "test", 
+            "stack": "sim11",
+            "project": "lhcb/Boole",
+            "ref": "custom-ref"
+        })
+        
+        assert result["total_results"] == 1
+        assert result["results"][0]["ref"] == "custom-ref"
 
 
 class TestGetWikiPages:
