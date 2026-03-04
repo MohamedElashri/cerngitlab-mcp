@@ -1,7 +1,6 @@
 """Unit tests for the LHCb stack resolver."""
 
 import pytest
-import httpx
 
 from cerngitlab_mcp.stack_resolver import resolve_stack, STACK_API_BASE
 
