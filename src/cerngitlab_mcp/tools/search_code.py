@@ -11,6 +11,7 @@ from mcp.types import Tool
 
 from cerngitlab_mcp.gitlab_client import GitLabClient
 from cerngitlab_mcp.exceptions import AuthenticationError, GitLabAPIError, NotFoundError
+from cerngitlab_mcp.config import get_settings
 
 
 logger = logging.getLogger("cerngitlab_mcp")
@@ -45,6 +46,14 @@ TOOL_DEFINITION = Tool(
                 "description": (
                     "Search scope: 'blobs' searches file content (default), "
                     "'filenames' searches only file names"
+                ),
+            },
+            "ref": {
+                "type": "string",
+                "description": (
+                    "Optional: Git branch or tag to search within. "
+                    "If omitted, uses the default_ref from configuration "
+                    "(or searches all branches if not configured)."
                 ),
             },
             "per_page": {
@@ -265,12 +274,20 @@ async def handle(client: GitLabClient, arguments: dict) -> dict[str, Any]:
 
     project = arguments.get("project", "").strip()
 
+    # Get ref from arguments or fall back to default_ref from config
+    settings = get_settings()
+    ref = arguments.get("ref", "").strip() or settings.default_ref
+
     params: dict[str, Any] = {
         "search": search_term,
         "scope": scope,
         "per_page": per_page,
         "page": page,
     }
+
+    # Add ref parameter if specified (filters to specific branch/tag)
+    if ref:
+        params["ref"] = ref
 
     if project:
         # Project-scoped search

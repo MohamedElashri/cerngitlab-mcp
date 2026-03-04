@@ -53,6 +53,7 @@ All settings are configured via environment variables prefixed with `CERNGITLAB_
 | `CERNGITLAB_MAX_RETRIES` | `3` | Max retries for failed requests |
 | `CERNGITLAB_RATE_LIMIT_PER_MINUTE` | `300` | API rate limit |
 | `CERNGITLAB_LOG_LEVEL` | `INFO` | Logging level |
+| `CERNGITLAB_DEFAULT_REF` | *(empty)* | Default Git branch or tag to search within (e.g., `main`, `master`, `v1.2.0`). Empty means search all branches. |
 
 ### Authentication
 

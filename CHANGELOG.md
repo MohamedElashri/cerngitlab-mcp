@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.4] - 2026-03-04
+
+### Added
+- **Branch/Tag Filtering**: Added support for restricting code searches to specific Git branches or tags via the `CERNGITLAB_DEFAULT_REF` environment variable and the `ref` parameter in the `search_code` tool.
+
+### Changed
+- **Configuration Option**: New `CERNGITLAB_DEFAULT_REF` environment variable allows setting a default branch or tag for all code searches. When empty (default), searches across all branches.
+- **Tool Parameter**: `search_code` tool now accepts an optional `ref` parameter to override the default branch/tag on a per-search basis.
+
 ## [0.1.3] - 2026-02-17
 
 ### Breaking Changes

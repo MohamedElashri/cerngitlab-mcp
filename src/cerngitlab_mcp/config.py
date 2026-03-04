@@ -45,6 +45,10 @@ class Settings(BaseSettings):
         default="INFO",
         description="Logging level (DEBUG, INFO, WARNING, ERROR, CRITICAL)",
     )
+    default_ref: str = Field(
+        default="",
+        description="Default Git branch or tag to search within. Empty means search all branches.",
+    )
 
 
 def get_settings() -> Settings:

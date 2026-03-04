@@ -61,6 +61,7 @@ Search for code across repositories. Falls back to file-level grep when advanced
 | `search_term` | string | yes | Code/text to search for |
 | `project` | string | no | Limit to specific project |
 | `scope` | string | no | `blobs` (content) or `filenames` |
+| `ref` | string | no | Git branch or tag to search within. If omitted, uses `CERNGITLAB_DEFAULT_REF` from config (or searches all branches if not configured). |
 | `page` | integer | no | Page number (default: 1) |
 | `per_page` | integer | no | Results count (default: 20) |
 
