@@ -1,13 +1,9 @@
 """Main CLI entry point for CERN GitLab tools."""
 
 import asyncio
-import json
-import sys
 
 import click
 
-from cerngitlab_mcp.config import get_settings
-from cerngitlab_mcp.gitlab_client import GitLabClient
 from cerngitlab_mcp.cli.commands import (
     search_projects_cmd,
     get_project_info_cmd,
