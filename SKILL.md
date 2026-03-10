@@ -25,6 +25,51 @@ Set environment variables prefixed with `CERNGITLAB_`:
 
 To create a token: visit `https://gitlab.cern.ch/-/user_settings/personal_access_tokens`, create with `read_api` scope, then `export CERNGITLAB_TOKEN=glpat-xxxxxxxxxxxx`.
 
+## Authentication
+
+**Most tools work without authentication** for public repositories. However, some features require a personal access token:
+
+### Tools that **require** authentication:
+- `search-code` — Global code search across all repositories
+- `search-lhcb-stack` — Code search within LHCb software stacks
+- `get-wiki` — Access to project wiki pages
+
+### Tools that **may require** authentication:
+- `list-releases` — Some projects restrict release API access
+- `get-release` — Some projects restrict release API access
+
+### Getting a Token
+
+1. Visit: https://gitlab.cern.ch/-/user_settings/personal_access_tokens
+2. Create a new token with the `read_api` scope
+3. Export it: `export CERNGITLAB_TOKEN=glpat-xxxxxxxxxxxx`
+
+### Checking Auth Status
+
+Use `test-connection` to verify your authentication status:
+
+```bash
+cerngitlab-cli test-connection
+```
+
+Returns:
+```json
+{
+  "status": "connected",
+  "authenticated": false,
+  "note": "No token provided — public access only"
+}
+```
+
+With a token:
+```json
+{
+  "status": "connected",
+  "authenticated": true,
+  "user": "username"
+}
+```
+
 ## Tool Selection Guide
 
 | Goal | Tool | Auth Required |
@@ -39,10 +84,12 @@ To create a token: visit `https://gitlab.cern.ch/-/user_settings/personal_access
 | Search issues | `search-issues` | No |
 | Access wiki pages | `get-wiki` | **Yes** |
 | Full project analysis (build, deps, CI) | `inspect-project` | No |
-| List releases | `list-releases` | No |
-| Get specific release details | `get-release` | No |
+| List releases | `list-releases` | Sometimes* |
+| Get specific release details | `get-release` | Sometimes* |
 | List tags (filterable) | `list-tags` | No |
 | Test connection & auth status | `test-connection` | No |
+
+> **\* Note:** Some projects may restrict release/tag API access. If you get a 403 error, set `CERNGITLAB_TOKEN`.
 
 ## Common Workflows
 
@@ -92,8 +139,9 @@ cerngitlab-cli list-tags --project lhcb/DaVinci --search v1
 
 All commands return JSON errors: `{"error": "Error message"}`. Common causes:
 
-- **"Authentication required"**: Tool needs `CERNGITLAB_TOKEN` but none is set.
-- **"Project not found"**: Wrong project ID or path — verify with `search-projects`.
+- **"Authentication required"** / **"Search API requires authentication"** / **"Wiki access denied"**: Tool needs `CERNGITLAB_TOKEN` but none is set. Set the environment variable with a personal access token (`read_api` scope).
+- **"Project not found"** / **"<project_path> not found"**: Wrong project ID or path — verify with `search-projects`. Note: some tools work better with numeric project IDs than `group/project` paths.
+- **"GitLab API error (403): 403 Forbidden"**: API access restricted for this project. May require authentication or project is private.
 - **"Rate limit exceeded"**: Wait and retry (default: 300 req/min).
 - **"File not found"**: Check `--ref` branch and verify path with `list-files`.
 
@@ -177,6 +225,8 @@ List files and directories in a project's repository.
 {"type": "tree", "path": "src", "name": "src"}
 {"type": "blob", "path": "README.md", "name": "README.md"}
 ```
+
+> **Tip:** If you get a "not found" error with a `group/project` path, try using the numeric project ID instead (found via `search-projects` or `get-project-info`).
 
 ---
 

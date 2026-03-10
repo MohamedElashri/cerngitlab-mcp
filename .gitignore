@@ -11,3 +11,10 @@ wheels/
 
 # files
 plan*
+
+# MCP Clients settings 
+.claude
+.gemini
+.mistral
+.qwen
+.settings.json
