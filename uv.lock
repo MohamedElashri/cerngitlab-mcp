@@ -48,6 +48,7 @@ name = "cerngitlab-mcp"
 version = "0.1.5"
 source = { editable = "." }
 dependencies = [
+    { name = "click" },
     { name = "httpx" },
     { name = "mcp" },
     { name = "pydantic" },
@@ -64,6 +65,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
+    { name = "click", specifier = ">=8.0.0" },
     { name = "httpx", specifier = ">=0.27.0" },
     { name = "mcp", specifier = ">=1.0.0" },
     { name = "pydantic", specifier = ">=2.0.0" },
