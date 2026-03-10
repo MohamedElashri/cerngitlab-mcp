@@ -8,7 +8,6 @@ from click.testing import CliRunner
 
 from cerngitlab_mcp.cli.main import cli
 from cerngitlab_mcp.config import Settings
-from cerngitlab_mcp.gitlab_client import GitLabClient
 
 from tests.conftest import make_file_response
 
