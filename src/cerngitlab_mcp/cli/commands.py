@@ -152,7 +152,7 @@ def list_files_cmd(
         finally:
             await client.close()
     
-    _run()
+    _run_async(_run())
 
 
 # ---------------------------------------------------------------------------
@@ -181,7 +181,7 @@ def get_file_cmd(project: str, file_path: str, ref: str) -> None:
         finally:
             await client.close()
     
-    _run()
+    _run_async(_run())
 
 
 # ---------------------------------------------------------------------------
@@ -205,7 +205,7 @@ def get_readme_cmd(project: str, ref: str) -> None:
         finally:
             await client.close()
     
-    _run()
+    _run_async(_run())
 
 
 # ---------------------------------------------------------------------------
@@ -248,7 +248,7 @@ def search_code_cmd(
         finally:
             await client.close()
     
-    _run()
+    _run_async(_run())
 
 
 # ---------------------------------------------------------------------------
@@ -294,7 +294,7 @@ def search_lhcb_stack_cmd(
         finally:
             await client.close()
     
-    _run()
+    _run_async(_run())
 
 
 # ---------------------------------------------------------------------------
@@ -331,7 +331,7 @@ def search_issues_cmd(
         finally:
             await client.close()
     
-    _run()
+    _run_async(_run())
 
 
 # ---------------------------------------------------------------------------
@@ -355,7 +355,7 @@ def get_wiki_cmd(project: str, page_slug: str) -> None:
         finally:
             await client.close()
     
-    _run()
+    _run_async(_run())
 
 
 # ---------------------------------------------------------------------------
@@ -379,7 +379,7 @@ def inspect_project_cmd(project: str, ref: str) -> None:
         finally:
             await client.close()
     
-    _run()
+    _run_async(_run())
 
 
 # ---------------------------------------------------------------------------
@@ -403,7 +403,7 @@ def list_releases_cmd(project: str, per_page: int) -> None:
         finally:
             await client.close()
     
-    _run()
+    _run_async(_run())
 
 
 # ---------------------------------------------------------------------------
@@ -427,7 +427,7 @@ def get_release_cmd(project: str, tag_name: str) -> None:
         finally:
             await client.close()
     
-    _run()
+    _run_async(_run())
 
 
 # ---------------------------------------------------------------------------
@@ -458,7 +458,7 @@ def list_tags_cmd(project: str, search: str, sort: str, per_page: int) -> None:
         finally:
             await client.close()
     
-    _run()
+    _run_async(_run())
 
 
 # ---------------------------------------------------------------------------
@@ -479,4 +479,4 @@ def test_connection_cmd() -> None:
         finally:
             await client.close()
     
-    _run()
+    _run_async(_run())
