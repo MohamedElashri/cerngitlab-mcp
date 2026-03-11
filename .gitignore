@@ -11,3 +11,24 @@ wheels/
 
 # files
 plan*
+
+# MCP Clients settings 
+.claude
+.gemini
+.mistral
+.qwen
+.settings.json
+
+# Environment variables
+.env
+
+# Benchmark results
+benchmark/results/
+*.benchmark.json
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+

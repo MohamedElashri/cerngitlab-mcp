@@ -256,6 +256,42 @@ For detailed parameter documentation, see [docs/dev.md](docs/dev.md).
 
 See [docs/dev.md](docs/dev.md) for development setup, project structure, testing, and release instructions.
 
+## Benchmark
+
+The project includes a benchmark suite to compare **cerngitlab-cli** vs **cerngitlab-mcp** approaches.
+
+### Quick Start
+
+```bash
+# Set required environment variables
+export CERNGITLAB_LITELLM_API_KEY="your-litellm-api-key"
+export CERNGITLAB_GITLAB_TOKEN="glpat-xxxxxxxxxxxx"
+
+# Run all benchmark questions
+python -m benchmark run
+
+# Run specific questions
+python -m benchmark run -q q1 -q q2 -q q3
+
+# Analyze results
+python -m benchmark analyze benchmark/results/benchmark_*.json
+```
+
+### Configuration
+
+```bash
+# Required
+export CERNGITLAB_LITELLM_API_KEY="your-api-key"
+export CERNGITLAB_GITLAB_TOKEN="glpat-token"
+
+# Optional
+export CERNGITLAB_LITELLM_MODEL="gpt-5.2"
+export CERNGITLAB_LLM_TIMEOUT=120
+export CERNGITLAB_GITLAB_TIMEOUT=60
+```
+
+For detailed documentation, see [benchmark/README.md](benchmark/README.md).
+
 ## License
 
 AGPL-3.0
