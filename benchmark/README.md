@@ -207,31 +207,3 @@ pip install cerngitlab-mcp
 export CERNGITLAB_LITELLM_API_KEY="your-key"
 ```
 
-## Example Session
-
-```bash
-# Set credentials
-export CERNGITLAB_LITELLM_API_KEY="key123"
-export CERNGITLAB_GITLAB_TOKEN="glpat-xyz"
-
-# Run benchmark
-python run_benchmark.py
-
-# Output:
-# 2026-03-11 12:00:00 - INFO - Running benchmark with 10 questions
-# 2026-03-11 12:00:01 - INFO - Running q1: Find the LHCb DaVinci project...
-# 2026-03-11 12:00:01 - INFO -   Testing CLI...
-# 2026-03-11 12:00:02 - INFO -   LLM called tool: get-project-info
-# 2026-03-11 12:00:03 - INFO -   Executing CLI: cerngitlab-cli get-project-info --project lhcb/DaVinci
-# 2026-03-11 12:00:10 - INFO -   Judging CLI...
-# 2026-03-11 12:00:12 - INFO -   Testing MCP...
-# ...
-# Results saved to results/benchmark_20260311_120000.json
-
-# Analyze
-python analyze_results.py results/benchmark_20260311_120000.json
-```
-
-## License
-
-AGPL-3.0
