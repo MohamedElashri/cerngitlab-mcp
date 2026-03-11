@@ -32,7 +32,7 @@ import time
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Optional
+from typing import Optional
 
 import httpx
 
@@ -772,24 +772,24 @@ Use the tools to gather information. Think step-by-step."""
             )
             
             # CLI approach
-            logger.info(f"  Testing CLI...")
+            logger.info("  Testing CLI...")
             result.cli_response = await self.run_cli_session(q)
             
             # Judge CLI response
             ref = self._get_reference(q["id"])
             if result.cli_response and not result.cli_response.error and ref:
-                logger.info(f"  Judging CLI...")
+                logger.info("  Judging CLI...")
                 result.cli_judge_result = await self.judge.evaluate(
                     q["id"], q["question"], ref, result.cli_response.final_answer
                 )
             
             # MCP approach
-            logger.info(f"  Testing MCP...")
+            logger.info("  Testing MCP...")
             result.mcp_response = await self.run_mcp_session(q)
             
             # Judge MCP response
             if result.mcp_response and not result.mcp_response.error and ref:
-                logger.info(f"  Judging MCP...")
+                logger.info("  Judging MCP...")
                 result.mcp_judge_result = await self.judge.evaluate(
                     q["id"], q["question"], ref, result.mcp_response.final_answer
                 )
