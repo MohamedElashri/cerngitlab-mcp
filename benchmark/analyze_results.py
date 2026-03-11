@@ -9,7 +9,6 @@ Usage:
 import json
 import sys
 from pathlib import Path
-from datetime import datetime
 
 
 def analyze_results(filepath: str) -> None:

@@ -19,7 +19,7 @@ import time
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Optional
+from typing import Optional
 
 import httpx
 
@@ -400,7 +400,7 @@ Use the MCP tools to query CERN GitLab. Cite which tool you used. Be precise wit
             )
             
             # CLI approach
-            logger.info(f"  Testing CLI...")
+            logger.info("  Testing CLI...")
             cli_resp = await self.run_session(q, "cli")
             result.cli_response = cli_resp
             
@@ -412,7 +412,7 @@ Use the MCP tools to query CERN GitLab. Cite which tool you used. Be precise wit
                 result.cli_judge_result = judge_result
             
             # MCP approach
-            logger.info(f"  Testing MCP...")
+            logger.info("  Testing MCP...")
             mcp_resp = await self.run_session(q, "mcp")
             result.mcp_response = mcp_resp
             
