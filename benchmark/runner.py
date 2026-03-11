@@ -8,7 +8,6 @@ collects responses, and evaluates them with AI Judge.
 import asyncio
 import json
 import logging
-import os
 import time
 from dataclasses import dataclass, field
 from datetime import datetime
