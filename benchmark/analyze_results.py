@@ -34,12 +34,12 @@ def analyze_results(filepath: str) -> None:
     print("CLI Approach:")
     print(f"  Average Score:  {summary['cli_avg_score']:.2f}/5")
     print(f"  Average Latency: {summary['cli_avg_latency']:.2f}s")
-    print(f"  Success Rate:   {summary['cli_success_rate'] * 100:.1f}%")
+    print(f"  Avg Tool Calls:  {summary.get('cli_avg_tool_calls', 0):.1f}")
     print("")
     print("MCP Approach:")
     print(f"  Average Score:  {summary['mcp_avg_score']:.2f}/5")
     print(f"  Average Latency: {summary['mcp_avg_latency']:.2f}s")
-    print(f"  Success Rate:   {summary['mcp_success_rate'] * 100:.1f}%")
+    print(f"  Avg Tool Calls:  {summary.get('mcp_avg_tool_calls', 0):.1f}")
     print("")
     
     # Determine winner
@@ -55,14 +55,14 @@ def analyze_results(filepath: str) -> None:
     elif score_diff < -0.1:
         print(f"✓ CLI scores {abs(score_diff):.2f} points higher")
     else:
-        print("⚖ Scores are tied")
+        print(f"⚖ Scores are tied (diff: {score_diff:.2f})")
     
     if latency_diff > 1.0:
         print(f"✓ CLI is {latency_diff:.2f}s faster")
     elif latency_diff < -1.0:
         print(f"✓ MCP is {abs(latency_diff):.2f}s faster")
     else:
-        print("⚖ Latency is similar")
+        print(f"⚖ Latency is similar (diff: {latency_diff:.2f}s)")
     
     print("")
     print("-" * 70)
@@ -76,14 +76,14 @@ def analyze_results(filepath: str) -> None:
         if "cli_judge" in qr:
             cli = qr["cli_judge"]
             print(f"  CLI Score: {cli['score']}/5 (confidence: {cli['confidence']:.2f})")
-            print(f"    Reasoning: {cli['reasoning'][:80]}...")
+            print(f"    Reasoning: {cli['reasoning'][:100]}...")
             if cli.get('hallucinations'):
                 print(f"    Hallucinations: {cli['hallucinations']}")
         
         if "mcp_judge" in qr:
             mcp = qr["mcp_judge"]
             print(f"  MCP Score: {mcp['score']}/5 (confidence: {mcp['confidence']:.2f})")
-            print(f"    Reasoning: {mcp['reasoning'][:80]}...")
+            print(f"    Reasoning: {mcp['reasoning'][:100]}...")
             if mcp.get('hallucinations'):
                 print(f"    Hallucinations: {mcp['hallucinations']}")
     

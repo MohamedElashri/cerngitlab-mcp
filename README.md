@@ -295,35 +295,37 @@ This can be used by LLMs or agents to understand the available tools and how to 
 
 ## Benchmark
 
-A **simple Python script** benchmark to compare **cerngitlab-cli** vs **cerngitlab-mcp** approaches.
+A benchmark comparing **LLM-driven tool execution** approaches:
+
+- **CLI approach**: LLM given SKILL.md → calls tools → executes `cerngitlab-cli` → returns results
+- **MCP approach**: LLM given SKILL.md + MCP → calls tools → executes Python functions → returns results
+
+**In both cases, the LLM decides which tools to call and synthesizes the final answer.**
 
 ### Quick Start
 
 ```bash
 cd benchmark
 
+# Install cerngitlab-mcp
+pip install cerngitlab-mcp
+
 # Set environment variables
 export CERNGITLAB_LITELLM_API_KEY="your-litellm-api-key"
 export CERNGITLAB_GITLAB_TOKEN="glpat-xxxxxxxxxxxx"
 
-# Run from project root with uv
-uv run python benchmark/run_benchmark.py
-
-# Or run specific questions
-uv run python benchmark/run_benchmark.py q1 q2 q3
+# Run benchmark
+python run_benchmark.py
 
 # Analyze results
-uv run python benchmark/analyze_results.py results/benchmark_*.json
+python analyze_results.py results/*.json
 ```
 
-### Features
+### What's Compared
 
-- **No installation needed** - just Python scripts
-- **10 benchmark questions** across different categories
-- **AI evaluation** using LiteLLM API (scores 0-5)
-- **Latency and accuracy metrics**
-- **Timeout handling** for both APIs
-- **Isolated sessions** per question
+- **Latency** - Total time from question to answer
+- **Tool usage** - Number of tool calls per question
+- **Overhead** - Subprocess (CLI) vs direct function calls (MCP)
 
 For details, see [benchmark/README.md](benchmark/README.md).
 
