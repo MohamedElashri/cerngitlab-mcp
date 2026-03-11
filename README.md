@@ -11,6 +11,7 @@
 ## Features
 
 - **14 MCP tools** for searching, browsing, and analyzing CERN GitLab repositories
+- **CLI tool** (`cerngitlab-cli`) for direct command-line usage
 - **Public access** — works without authentication for public repositories
 - **HEP-focused** — dependency parsing for Python and C++ ecosystems, binary detection for `.root` files, issue search
 - **Robust** — rate limiting, retries with exponential backoff, graceful error handling
@@ -256,6 +257,42 @@ For detailed parameter documentation, see [docs/dev.md](docs/dev.md).
 
 See [docs/dev.md](docs/dev.md) for development setup, project structure, testing, and release instructions.
 
+## CLI Tool
+
+A command-line interface is also available for direct usage without the MCP server:
+
+```bash
+# Install or use with uvx
+uvx cerngitlab-cli
+
+# Test connectivity
+cerngitlab-cli test-connection
+
+# Search for projects
+cerngitlab-cli search-projects --query "ROOT analysis" --language python
+
+# Get project info
+cerngitlab-cli get-project-info --project lhcb/DaVinci
+
+# Search code
+cerngitlab-cli search-code --search-term "RooFit" --per-page 10
+
+# Inspect project structure
+cerngitlab-cli inspect-project --project lhcb/allen
+```
+
+All commands output JSON to stdout for easy piping and composition. See `cerngitlab-cli --help` for the full list of commands.
+
+## Skill File
+
+A detailed skill file ([`SKILL.md`](SKILL.md)) is available with:
+- Complete documentation of all 14 tools
+- Input/output specifications
+- Usage examples
+- Authentication requirements
+
+This can be used by LLMs or agents to understand the available tools and how to use them.
+
 ## Benchmark
 
 The project includes a benchmark suite to compare **cerngitlab-cli** vs **cerngitlab-mcp** approaches.
@@ -291,6 +328,7 @@ export CERNGITLAB_GITLAB_TIMEOUT=60
 ```
 
 For detailed documentation, see [benchmark/README.md](benchmark/README.md).
+
 
 ## License
 
