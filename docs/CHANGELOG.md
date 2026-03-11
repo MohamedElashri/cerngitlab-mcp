@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.6] - 2026-03-11
+
+### Added
+- **`cerngitlab-cli`** Command-Line Interface**: Added a CLI tool for users to use the same tools provided by `cerngitlab-mcp` directly from the terminal. It can be used + the `SKILLS.md` file for skill + cli workflow.
+
+
 ## [0.1.5] - 2026-03-05
 
 ### Added
