@@ -295,40 +295,37 @@ This can be used by LLMs or agents to understand the available tools and how to 
 
 ## Benchmark
 
-The project includes a benchmark suite to compare **cerngitlab-cli** vs **cerngitlab-mcp** approaches.
+A **simple Python script** benchmark to compare **cerngitlab-cli** vs **cerngitlab-mcp** approaches.
 
 ### Quick Start
 
 ```bash
-# Set required environment variables
+cd benchmark
+
+# Set environment variables
 export CERNGITLAB_LITELLM_API_KEY="your-litellm-api-key"
 export CERNGITLAB_GITLAB_TOKEN="glpat-xxxxxxxxxxxx"
 
-# Run all benchmark questions
-python -m benchmark run
+# Run from project root with uv
+uv run python benchmark/run_benchmark.py
 
-# Run specific questions
-python -m benchmark run -q q1 -q q2 -q q3
+# Or run specific questions
+uv run python benchmark/run_benchmark.py q1 q2 q3
 
 # Analyze results
-python -m benchmark analyze benchmark/results/benchmark_*.json
+uv run python benchmark/analyze_results.py results/benchmark_*.json
 ```
 
-### Configuration
+### Features
 
-```bash
-# Required
-export CERNGITLAB_LITELLM_API_KEY="your-api-key"
-export CERNGITLAB_GITLAB_TOKEN="glpat-token"
+- **No installation needed** - just Python scripts
+- **10 benchmark questions** across different categories
+- **AI evaluation** using LiteLLM API (scores 0-5)
+- **Latency and accuracy metrics**
+- **Timeout handling** for both APIs
+- **Isolated sessions** per question
 
-# Optional
-export CERNGITLAB_LITELLM_MODEL="gpt-5.2"
-export CERNGITLAB_LLM_TIMEOUT=120
-export CERNGITLAB_GITLAB_TIMEOUT=60
-```
-
-For detailed documentation, see [benchmark/README.md](benchmark/README.md).
-
+For details, see [benchmark/README.md](benchmark/README.md).
 
 ## License
 
