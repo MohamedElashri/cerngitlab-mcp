@@ -293,6 +293,42 @@ A detailed skill file ([`SKILL.md`](SKILL.md)) is available with:
 
 This can be used by LLMs or agents to understand the available tools and how to use them.
 
+## Benchmark
+
+A benchmark comparing **LLM-driven tool execution** approaches:
+
+- **CLI approach**: LLM given SKILL.md → calls tools → executes `cerngitlab-cli` → returns results
+- **MCP approach**: LLM given SKILL.md + MCP → calls tools → executes Python functions → returns results
+
+**In both cases, the LLM decides which tools to call and synthesizes the final answer.**
+
+### Quick Start
+
+```bash
+cd benchmark
+
+# Install cerngitlab-mcp
+pip install cerngitlab-mcp
+
+# Set environment variables
+export CERNGITLAB_LITELLM_API_KEY="your-litellm-api-key"
+export CERNGITLAB_GITLAB_TOKEN="glpat-xxxxxxxxxxxx"
+
+# Run benchmark
+python run_benchmark.py
+
+# Analyze results
+python analyze_results.py results/*.json
+```
+
+### What's Compared
+
+- **Latency** - Total time from question to answer
+- **Tool usage** - Number of tool calls per question
+- **Overhead** - Subprocess (CLI) vs direct function calls (MCP)
+
+For details, see [benchmark/README.md](benchmark/README.md).
+
 ## License
 
 AGPL-3.0
