@@ -1,0 +1,87 @@
+{
+  "benchmark_name": "CERN GitLab MCP Benchmark",
+  "version": "1.0.0",
+  "description": "Benchmark questions for testing Model + cerngitlab-cli vs Model + cerngitlab MCP",
+  "questions": [
+    {
+      "id": "q1",
+      "category": "Project Discovery",
+      "difficulty": "easy",
+      "question": "Find the LHCb DaVinci project. What is its project ID, namespace path, and default branch?",
+      "expected_tools": ["search-projects", "get-project-info"],
+      "stability": "high"
+    },
+    {
+      "id": "q2",
+      "category": "Project Discovery",
+      "difficulty": "easy",
+      "question": "Which LHCb project is built on top of the Gaudi framework and contains general purpose classes used throughout LHCb software? What is its project ID?",
+      "expected_tools": ["search-projects"],
+      "stability": "high"
+    },
+    {
+      "id": "q3",
+      "category": "Build Configuration",
+      "difficulty": "easy",
+      "question": "What build system does the DaVinci project use? What is the minimum required version?",
+      "expected_tools": ["get-file", "inspect-project"],
+      "stability": "high"
+    },
+    {
+      "id": "q4",
+      "category": "Project Structure",
+      "difficulty": "medium",
+      "question": "According to DaVinci's CMakeLists.txt, which subdirectories are registered in the build configuration?",
+      "expected_tools": ["get-file"],
+      "stability": "high"
+    },
+    {
+      "id": "q5",
+      "category": "CI/CD Configuration",
+      "difficulty": "medium",
+      "question": "What are the CI/CD stages defined in DaVinci's .gitlab-ci.yml file?",
+      "expected_tools": ["get-file", "inspect-project"],
+      "stability": "high"
+    },
+    {
+      "id": "q6",
+      "category": "Legal/Compliance",
+      "difficulty": "medium",
+      "question": "What license is used by the DaVinci project? Where is this stated in the project files?",
+      "expected_tools": ["get-file"],
+      "stability": "very_high"
+    },
+    {
+      "id": "q7",
+      "category": "Project Structure",
+      "difficulty": "medium",
+      "question": "What file is in the cmake/ directory of the DaVinci project, and what does it suggest about the project's dependency management?",
+      "expected_tools": ["list-files", "get-file"],
+      "stability": "high"
+    },
+    {
+      "id": "q8",
+      "category": "Project Analysis",
+      "difficulty": "easy",
+      "question": "What programming ecosystems does the DaVinci project support according to project inspection?",
+      "expected_tools": ["inspect-project"],
+      "stability": "high"
+    },
+    {
+      "id": "q9",
+      "category": "Configuration",
+      "difficulty": "easy",
+      "question": "Test the connection to CERN GitLab. Report the GitLab URL, authentication status, and whether public access is available.",
+      "expected_tools": ["test-connection"],
+      "stability": "very_high"
+    },
+    {
+      "id": "q10",
+      "category": "Multi-Step Research",
+      "difficulty": "medium",
+      "question": "I'm researching the Gaudi framework. Find the main Gaudi project, tell me its project ID, what it's used for, and whether it's experiment-specific or general-purpose.",
+      "expected_tools": ["search-projects", "get-project-info"],
+      "stability": "very_high"
+    }
+  ]
+}

@@ -1,0 +1,171 @@
+{
+  "benchmark_name": "CERN GitLab MCP Benchmark",
+  "version": "1.0.0",
+  "description": "Reference answers for benchmark questions",
+  "reference_answers": [
+    {
+      "question_id": "q1",
+      "category": "Project Discovery",
+      "facts": {
+        "project_id": 544,
+        "namespace_path": "lhcb/DaVinci",
+        "default_branch": "master",
+        "url": "https://gitlab.cern.ch/lhcb/DaVinci"
+      },
+      "full_answer": "The LHCb DaVinci project has ID 544, namespace path 'lhcb/DaVinci', and default branch 'master'. URL: https://gitlab.cern.ch/lhcb/DaVinci",
+      "scoring_criteria": {
+        "project_id": {"required": true, "weight": 2},
+        "namespace_path": {"required": true, "weight": 2},
+        "default_branch": {"required": true, "weight": 1}
+      }
+    },
+    {
+      "question_id": "q2",
+      "category": "Project Discovery",
+      "facts": {
+        "project_name": "LHCb",
+        "namespace_path": "lhcb/LHCb",
+        "project_id": 399,
+        "description": "The LHCb project contains general purpose classes used throughout the LHCb software. It is built on top of the Gaudi framework.",
+        "documentation": "http://cern.ch/lhcbdoc/lhcb"
+      },
+      "full_answer": "The project is lhcb/LHCb with ID 399. It contains general purpose classes used throughout LHCb software and is built on top of the Gaudi framework.",
+      "scoring_criteria": {
+        "project_id": {"required": true, "weight": 2},
+        "namespace_path": {"required": true, "weight": 1},
+        "gaudi_relationship": {"required": true, "weight": 2}
+      }
+    },
+    {
+      "question_id": "q3",
+      "category": "Build Configuration",
+      "facts": {
+        "build_system": "CMake",
+        "minimum_version": "3.15",
+        "evidence": "CMakeLists.txt contains cmake_minimum_required(VERSION 3.15)"
+      },
+      "full_answer": "DaVinci uses CMake as its build system with a minimum required version of 3.15, as specified in CMakeLists.txt.",
+      "scoring_criteria": {
+        "build_system": {"required": true, "weight": 2},
+        "minimum_version": {"required": true, "weight": 3}
+      }
+    },
+    {
+      "question_id": "q4",
+      "category": "Project Structure",
+      "facts": {
+        "subdirectories": [
+          "DaVinciExamples",
+          "DaVinciTutorials",
+          "DaVinciSys",
+          "DaVinciTests",
+          "Phys/DaVinci",
+          "Phys/FunTuple",
+          "HltEfficiencyChecker",
+          "DaVinciCache"
+        ],
+        "source": "lhcb_add_subdirectories in CMakeLists.txt"
+      },
+      "full_answer": "The subdirectories registered in DaVinci's CMakeLists.txt are: DaVinciExamples, DaVinciTutorials, DaVinciSys, DaVinciTests, Phys/DaVinci, Phys/FunTuple, HltEfficiencyChecker, and DaVinciCache.",
+      "scoring_criteria": {
+        "subdirectories_count": {"required": true, "weight": 3},
+        "accuracy": {"required": true, "weight": 5}
+      }
+    },
+    {
+      "question_id": "q5",
+      "category": "CI/CD Configuration",
+      "facts": {
+        "stages": ["test", "build", "docs", "deploy"],
+        "jobs": ["python-linting", "build", "build-docs", "pages"],
+        "container": "alma9-devel",
+        "uses_cvmfs": true
+      },
+      "full_answer": "DaVinci's CI/CD pipeline has stages: test, build, docs, and deploy. Jobs include python-linting, build, build-docs, and pages, running on alma9-devel container with CVMFS tags.",
+      "scoring_criteria": {
+        "stages": {"required": true, "weight": 3},
+        "jobs": {"required": false, "weight": 1},
+        "container": {"required": false, "weight": 1}
+      }
+    },
+    {
+      "question_id": "q6",
+      "category": "Legal/Compliance",
+      "facts": {
+        "license": "GNU General Public Licence version 3 (GPL-3.0)",
+        "stated_in": ["CMakeLists.txt", ".gitlab-ci.yml", "COPYING"],
+        "copyright_holder": "CERN for the benefit of the LHCb Collaboration"
+      },
+      "full_answer": "DaVinci uses GNU GPL version 3 license. This is stated in the CMakeLists.txt and .gitlab-ci.yml file headers, and verbatim in the COPYING file. Copyright belongs to CERN for the benefit of the LHCb Collaboration.",
+      "scoring_criteria": {
+        "license_type": {"required": true, "weight": 3},
+        "source_files": {"required": true, "weight": 2}
+      }
+    },
+    {
+      "question_id": "q7",
+      "category": "Project Structure",
+      "facts": {
+        "file_name": "DaVinciDependencies.cmake",
+        "file_path": "cmake/DaVinciDependencies.cmake",
+        "purpose": "Modular dependency management using CMake's include mechanism",
+        "included_via": "include(DaVinciDependencies)"
+      },
+      "full_answer": "The cmake/ directory contains DaVinciDependencies.cmake, which suggests modular dependency management. The main CMakeLists.txt includes it via include(DaVinciDependencies).",
+      "scoring_criteria": {
+        "file_name": {"required": true, "weight": 2},
+        "purpose": {"required": true, "weight": 3}
+      }
+    },
+    {
+      "question_id": "q8",
+      "category": "Project Analysis",
+      "facts": {
+        "ecosystems": ["C++", "Fortran"],
+        "build_systems": ["CMake"],
+        "primary_language": "C++"
+      },
+      "full_answer": "According to project inspection, DaVinci supports C++ and Fortran ecosystems, uses CMake as build system, with C++ as the primary language.",
+      "scoring_criteria": {
+        "ecosystems": {"required": true, "weight": 3},
+        "build_systems": {"required": true, "weight": 2}
+      }
+    },
+    {
+      "question_id": "q9",
+      "category": "Configuration",
+      "facts": {
+        "gitlab_url": "https://gitlab.cern.ch",
+        "authenticated": false,
+        "public_access": true,
+        "status": "connected"
+      },
+      "full_answer": "Connection test shows: GitLab URL is https://gitlab.cern.ch, authentication is false (no token provided), public access is available, status is connected.",
+      "scoring_criteria": {
+        "gitlab_url": {"required": true, "weight": 2},
+        "authenticated_status": {"required": true, "weight": 1},
+        "public_access": {"required": true, "weight": 2}
+      }
+    },
+    {
+      "question_id": "q10",
+      "category": "Multi-Step Research",
+      "facts": {
+        "project_name": "Gaudi",
+        "namespace_path": "gaudi/Gaudi",
+        "project_id": 38,
+        "purpose": "An open project for providing interfaces and services for building HEP experiment frameworks",
+        "scope": "Experiment independent - used for event data processing applications across multiple experiments",
+        "default_branch": "master",
+        "url": "https://gitlab.cern.ch/gaudi/Gaudi"
+      },
+      "full_answer": "The main Gaudi project is gaudi/Gaudi with ID 38. It provides interfaces and services for building HEP experiment frameworks. It is experiment-independent, used for event data processing across multiple experiments. URL: https://gitlab.cern.ch/gaudi/Gaudi",
+      "scoring_criteria": {
+        "project_id": {"required": true, "weight": 2},
+        "namespace_path": {"required": true, "weight": 1},
+        "purpose": {"required": true, "weight": 2},
+        "scope": {"required": true, "weight": 2}
+      }
+    }
+  ]
+}
