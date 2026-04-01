@@ -73,7 +73,7 @@ async def find_project_with_tags(client: GitLabClient) -> tuple[str, str | None]
 # ---------------------------------------------------------------------------
 
 
-async def test_connectivity(client: GitLabClient) -> None:
+async def check_connectivity(client: GitLabClient) -> None:
     _header("Connectivity")
     result = await client.test_connection()
     for key, value in result.items():
@@ -88,7 +88,7 @@ async def test_connectivity(client: GitLabClient) -> None:
 # ---------------------------------------------------------------------------
 
 
-async def test_search_projects(client: GitLabClient) -> None:
+async def check_search_projects(client: GitLabClient) -> None:
     _header("search_projects")
 
     _sub("keyword search: 'root'")
@@ -120,7 +120,7 @@ async def test_search_projects(client: GitLabClient) -> None:
     print(f"  Found {len(result)} projects")
 
 
-async def test_get_project_info(
+async def check_get_project_info(
     client: GitLabClient, project: str, project_id: str
 ) -> None:
     _header(f"get_project_info ({project})")
@@ -134,7 +134,7 @@ async def test_get_project_info(
     print(f"  Resolved: {result2['path_with_namespace']}")
 
 
-async def test_list_project_files(client: GitLabClient, project: str) -> None:
+async def check_list_project_files(client: GitLabClient, project: str) -> None:
     _header(f"list_project_files ({project})")
 
     result = await list_project_files.handle(client, {"project": project})
@@ -159,7 +159,7 @@ async def test_list_project_files(client: GitLabClient, project: str) -> None:
 # ---------------------------------------------------------------------------
 
 
-async def test_get_file_content(client: GitLabClient, project: str) -> None:
+async def check_get_file_content(client: GitLabClient, project: str) -> None:
     _header(f"get_file_content ({project})")
 
     _sub("README.md")
@@ -189,7 +189,7 @@ async def test_get_file_content(client: GitLabClient, project: str) -> None:
         print(f"  Not found: {e}")
 
 
-async def test_get_project_readme(client: GitLabClient, project: str) -> None:
+async def check_get_project_readme(client: GitLabClient, project: str) -> None:
     _header(f"get_project_readme ({project})")
     result = await get_project_readme.handle(client, {"project": project})
     if result.get("content"):
@@ -200,7 +200,7 @@ async def test_get_project_readme(client: GitLabClient, project: str) -> None:
         print(f"  No README found: {result.get('error')}")
 
 
-async def test_search_code(client: GitLabClient, project: str) -> None:
+async def check_search_code(client: GitLabClient, project: str) -> None:
     _header("search_code")
 
     _sub(f"project-scoped: 'include' in {project}")
@@ -218,7 +218,7 @@ async def test_search_code(client: GitLabClient, project: str) -> None:
         print(f"  Note: {result['error']}")
 
 
-async def test_get_wiki_pages(client: GitLabClient, project: str) -> None:
+async def check_get_wiki_pages(client: GitLabClient, project: str) -> None:
     _header(f"get_wiki_pages ({project})")
     result = await get_wiki_pages.handle(client, {"project": project})
     if result.get("error"):
@@ -236,7 +236,7 @@ async def test_get_wiki_pages(client: GitLabClient, project: str) -> None:
 # ---------------------------------------------------------------------------
 
 
-async def test_search_issues(client: GitLabClient, project: str) -> None:
+async def check_search_issues(client: GitLabClient, project: str) -> None:
     _header(f"search_issues ({project})")
     # Search for something likely to exist
     result = await search_issues.handle(
@@ -252,7 +252,7 @@ async def test_search_issues(client: GitLabClient, project: str) -> None:
 # ---------------------------------------------------------------------------
 
 
-async def test_inspect_project(client: GitLabClient, project: str) -> None:
+async def check_inspect_project(client: GitLabClient, project: str) -> None:
     _header(f"inspect_project ({project})")
     result = await inspect_project.handle(client, {"project": project})
 
@@ -281,7 +281,7 @@ async def test_inspect_project(client: GitLabClient, project: str) -> None:
 # ---------------------------------------------------------------------------
 
 
-async def test_list_tags(client: GitLabClient, project: str) -> str | None:
+async def check_list_tags(client: GitLabClient, project: str) -> str | None:
     _header(f"list_tags ({project})")
     result = await list_tags.handle(client, {"project": project, "per_page": 10})
     print(f"  Total tags: {result['total_tags']}")
@@ -303,7 +303,7 @@ async def test_list_tags(client: GitLabClient, project: str) -> str | None:
     return first_tag
 
 
-async def test_list_releases(client: GitLabClient, project: str) -> str | None:
+async def check_list_releases(client: GitLabClient, project: str) -> str | None:
     _header(f"list_releases ({project})")
     result = await list_releases.handle(client, {"project": project, "per_page": 10})
     print(f"  Total releases: {result['total_releases']}")
@@ -317,7 +317,7 @@ async def test_list_releases(client: GitLabClient, project: str) -> str | None:
     return first_tag
 
 
-async def test_get_release(client: GitLabClient, project: str, tag_name: str) -> None:
+async def check_get_release(client: GitLabClient, project: str, tag_name: str) -> None:
     _header(f"get_release ({project}, tag={tag_name})")
     result = await get_release.handle(
         client, {"project": project, "tag_name": tag_name}
@@ -351,7 +351,7 @@ async def main() -> None:
     client = GitLabClient(settings)
 
     try:
-        await test_connectivity(client)
+        await check_connectivity(client)
 
         # Find a general test project
         proj = await find_test_project(client)
@@ -360,31 +360,31 @@ async def main() -> None:
         print(f"\nUsing general test project: {project} (id={project_id})")
 
         # Repository discovery
-        await test_search_projects(client)
-        await test_get_project_info(client, project, project_id)
-        await test_list_project_files(client, project)
+        await check_search_projects(client)
+        await check_get_project_info(client, project, project_id)
+        await check_list_project_files(client, project)
 
         # Code and documentation
-        await test_get_file_content(client, project)
-        await test_get_project_readme(client, project)
-        await test_search_code(client, project)
-        await test_get_wiki_pages(client, project)
+        await check_get_file_content(client, project)
+        await check_get_project_readme(client, project)
+        await check_search_code(client, project)
+        await check_get_wiki_pages(client, project)
 
         # Context
-        await test_search_issues(client, project)
+        await check_search_issues(client, project)
 
         # Analysis
-        await test_inspect_project(client, project)
+        await check_inspect_project(client, project)
 
         # Release and version tools — need a project with tags
         tag_project, known_tag = await find_project_with_tags(client)
         if tag_project:
             print(f"\nUsing release test project: {tag_project}")
-            tag_from_list = await test_list_tags(client, tag_project)
-            release_tag = await test_list_releases(client, tag_project)
+            tag_from_list = await check_list_tags(client, tag_project)
+            release_tag = await check_list_releases(client, tag_project)
             test_tag = release_tag or tag_from_list or known_tag
             if test_tag:
-                await test_get_release(client, tag_project, test_tag)
+                await check_get_release(client, tag_project, test_tag)
             else:
                 print("\n  Skipping get_release — no tags found")
         else:
