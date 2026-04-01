@@ -90,7 +90,9 @@ def _parse_pyproject_toml(content: str) -> list[dict[str, str]]:
     for line in content.splitlines():
         stripped = line.strip()
         # Detect [project] dependencies = [...] or [tool.poetry.dependencies]
-        if re.match(r"^dependencies\s*=\s*\[", stripped) or re.match(r"^\[tool\.poetry\.dependencies\]", stripped):
+        if re.match(r"^dependencies\s*=\s*\[", stripped) or re.match(
+            r"^\[tool\.poetry\.dependencies\]", stripped
+        ):
             in_deps = True
             # Handle inline list
             inline = re.search(r"\[(.+)\]", stripped)
@@ -100,7 +102,12 @@ def _parse_pyproject_toml(content: str) -> list[dict[str, str]]:
                     if item:
                         match = re.match(r"^([a-zA-Z0-9_.-]+)(.*)?$", item)
                         if match:
-                            deps.append({"name": match.group(1), "version_spec": (match.group(2) or "").strip()})
+                            deps.append(
+                                {
+                                    "name": match.group(1),
+                                    "version_spec": (match.group(2) or "").strip(),
+                                }
+                            )
                 in_deps = False
             continue
         if in_deps:
@@ -113,14 +120,21 @@ def _parse_pyproject_toml(content: str) -> list[dict[str, str]]:
             if item:
                 match = re.match(r"^([a-zA-Z0-9_.-]+)(.*)?$", item)
                 if match:
-                    deps.append({"name": match.group(1), "version_spec": (match.group(2) or "").strip()})
+                    deps.append(
+                        {
+                            "name": match.group(1),
+                            "version_spec": (match.group(2) or "").strip(),
+                        }
+                    )
     return deps
 
 
 def _parse_cmake_find_package(content: str) -> list[dict[str, str]]:
     """Extract find_package() calls from CMakeLists.txt."""
     deps = []
-    for match in re.finditer(r"find_package\s*\(\s*([a-zA-Z0-9_]+)(?:\s+([0-9][^\s)]*))?\s*", content):
+    for match in re.finditer(
+        r"find_package\s*\(\s*([a-zA-Z0-9_]+)(?:\s+([0-9][^\s)]*))?\s*", content
+    ):
         name = match.group(1)
         version = match.group(2) or ""
         deps.append({"name": name, "version_spec": version})
@@ -166,13 +180,15 @@ async def handle(client: GitLabClient, arguments: dict) -> dict[str, Any]:
             else:
                 parsed_deps = []
 
-            results.append({
-                "file": file_path,
-                "ecosystem": ecosystem,
-                "dependencies_count": len(parsed_deps),
-                "dependencies": parsed_deps,
-                "raw_content_preview": content[:500] if not parsed_deps else None,
-            })
+            results.append(
+                {
+                    "file": file_path,
+                    "ecosystem": ecosystem,
+                    "dependencies_count": len(parsed_deps),
+                    "dependencies": parsed_deps,
+                    "raw_content_preview": content[:500] if not parsed_deps else None,
+                }
+            )
 
     return {
         "project": project,

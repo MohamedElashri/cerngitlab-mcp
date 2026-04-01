@@ -38,6 +38,7 @@ TOOL_DEFINITION = Tool(
     },
 )
 
+
 # TODO: Add proper YAML parsing for better analysis
 def _analyze_ci_yaml(content: str) -> dict[str, Any]:
     """Extract structural information from a .gitlab-ci.yml file.
@@ -56,11 +57,21 @@ def _analyze_ci_yaml(content: str) -> dict[str, Any]:
     # Extract top-level keys that look like job names
     # Jobs are top-level keys that are not reserved keywords
     reserved = {
-        "stages", "variables", "default", "include", "image", "services",
-        "before_script", "after_script", "cache", "workflow",
+        "stages",
+        "variables",
+        "default",
+        "include",
+        "image",
+        "services",
+        "before_script",
+        "after_script",
+        "cache",
+        "workflow",
     }
     jobs = []
-    for match in re.finditer(r"^([a-zA-Z_][a-zA-Z0-9_.-]*):\s*$", content, re.MULTILINE):
+    for match in re.finditer(
+        r"^([a-zA-Z_][a-zA-Z0-9_.-]*):\s*$", content, re.MULTILINE
+    ):
         key = match.group(1)
         if key not in reserved and not key.startswith("."):
             jobs.append(key)
@@ -68,14 +79,18 @@ def _analyze_ci_yaml(content: str) -> dict[str, Any]:
 
     # Extract hidden jobs (templates starting with .)
     hidden_jobs = []
-    for match in re.finditer(r"^(\.[a-zA-Z_][a-zA-Z0-9_.-]*):\s*$", content, re.MULTILINE):
+    for match in re.finditer(
+        r"^(\.[a-zA-Z_][a-zA-Z0-9_.-]*):\s*$", content, re.MULTILINE
+    ):
         hidden_jobs.append(match.group(1))
     if hidden_jobs:
         analysis["hidden_jobs_templates"] = hidden_jobs
 
     # Extract includes
     includes = []
-    for match in re.finditer(r"(?:local|remote|template|project|file):\s*['\"]?([^'\"#\n]+)", content):
+    for match in re.finditer(
+        r"(?:local|remote|template|project|file):\s*['\"]?([^'\"#\n]+)", content
+    ):
         includes.append(match.group(1).strip())
     if includes:
         analysis["includes"] = includes
@@ -86,7 +101,7 @@ def _analyze_ci_yaml(content: str) -> dict[str, Any]:
         analysis["image"] = image_match.group(1).strip().strip("'\"")
 
     # Extract variables
-    variables = {}
+    variables: dict[str, Any] = {}
     in_vars = False
     for line in content.splitlines():
         if re.match(r"^variables:\s*$", line):

@@ -33,6 +33,7 @@ from cerngitlab_mcp.tools.utils import encode_project
 # Helpers
 # ---------------------------------------------------------------------------
 
+
 def _header(title: str) -> None:
     print(f"\n{'=' * 60}\n{title}\n{'=' * 60}")
 
@@ -71,6 +72,7 @@ async def find_project_with_tags(client: GitLabClient) -> tuple[str, str | None]
 # Connectivity
 # ---------------------------------------------------------------------------
 
+
 async def test_connectivity(client: GitLabClient) -> None:
     _header("Connectivity")
     result = await client.test_connection()
@@ -85,6 +87,7 @@ async def test_connectivity(client: GitLabClient) -> None:
 # Project discovery
 # ---------------------------------------------------------------------------
 
+
 async def test_search_projects(client: GitLabClient) -> None:
     _header("search_projects")
 
@@ -95,19 +98,31 @@ async def test_search_projects(client: GitLabClient) -> None:
         print(f"    {p['path_with_namespace']}: {(p.get('description') or '')[:60]}")
 
     _sub("language filter: python")
-    result = await search_projects.handle(client, {
-        "query": "analysis", "language": "python", "per_page": 5,
-    })
+    result = await search_projects.handle(
+        client,
+        {
+            "query": "analysis",
+            "language": "python",
+            "per_page": 5,
+        },
+    )
     print(f"  Found {len(result)} Python projects")
 
     _sub("sort by stars")
-    result = await search_projects.handle(client, {
-        "query": "physics", "sort_by": "stars", "per_page": 5,
-    })
+    result = await search_projects.handle(
+        client,
+        {
+            "query": "physics",
+            "sort_by": "stars",
+            "per_page": 5,
+        },
+    )
     print(f"  Found {len(result)} projects")
 
 
-async def test_get_project_info(client: GitLabClient, project: str, project_id: str) -> None:
+async def test_get_project_info(
+    client: GitLabClient, project: str, project_id: str
+) -> None:
     _header(f"get_project_info ({project})")
     result = await get_project_info.handle(client, {"project": project})
     print(f"  Name: {result['name']}")
@@ -133,7 +148,9 @@ async def test_list_project_files(client: GitLabClient, project: str) -> None:
     if result["directories"]:
         subdir = result["directories"][0]["path"]
         _sub(f"subdirectory: {subdir}")
-        sub = await list_project_files.handle(client, {"project": project, "path": subdir})
+        sub = await list_project_files.handle(
+            client, {"project": project, "path": subdir}
+        )
         print(f"  Entries: {sub['total_entries']}")
 
 
@@ -141,23 +158,32 @@ async def test_list_project_files(client: GitLabClient, project: str) -> None:
 # Code and documentation access
 # ---------------------------------------------------------------------------
 
+
 async def test_get_file_content(client: GitLabClient, project: str) -> None:
     _header(f"get_file_content ({project})")
 
     _sub("README.md")
-    result = await get_file_content.handle(client, {"project": project, "file_path": "README.md"})
-    print(f"  Size: {result['size']} bytes, binary: {result['is_binary']}, lang: {result['language']}")
+    result = await get_file_content.handle(
+        client, {"project": project, "file_path": "README.md"}
+    )
+    print(
+        f"  Size: {result['size']} bytes, binary: {result['is_binary']}, lang: {result['language']}"
+    )
 
     _sub(".gitlab-ci.yml")
     try:
-        result = await get_file_content.handle(client, {"project": project, "file_path": ".gitlab-ci.yml"})
+        result = await get_file_content.handle(
+            client, {"project": project, "file_path": ".gitlab-ci.yml"}
+        )
         print(f"  Size: {result['size']} bytes, lang: {result['language']}")
     except Exception as e:
         print(f"  Not found (expected for some repos): {e}")
 
     _sub("CMakeLists.txt")
     try:
-        result = await get_file_content.handle(client, {"project": project, "file_path": "CMakeLists.txt"})
+        result = await get_file_content.handle(
+            client, {"project": project, "file_path": "CMakeLists.txt"}
+        )
         print(f"  Size: {result['size']} bytes, lang: {result['language']}")
     except Exception as e:
         print(f"  Not found: {e}")
@@ -167,7 +193,9 @@ async def test_get_project_readme(client: GitLabClient, project: str) -> None:
     _header(f"get_project_readme ({project})")
     result = await get_project_readme.handle(client, {"project": project})
     if result.get("content"):
-        print(f"  File: {result['file_name']}, format: {result['format']}, size: {result['size']} bytes")
+        print(
+            f"  File: {result['file_name']}, format: {result['format']}, size: {result['size']} bytes"
+        )
     else:
         print(f"  No README found: {result.get('error')}")
 
@@ -176,7 +204,9 @@ async def test_search_code(client: GitLabClient, project: str) -> None:
     _header("search_code")
 
     _sub(f"project-scoped: 'include' in {project}")
-    result = await search_code.handle(client, {"search_term": "include", "project": project, "per_page": 5})
+    result = await search_code.handle(
+        client, {"search_term": "include", "project": project, "per_page": 5}
+    )
     print(f"  Results: {result['total_results']}")
     if result.get("error"):
         print(f"  Note: {result['error']}")
@@ -205,12 +235,15 @@ async def test_get_wiki_pages(client: GitLabClient, project: str) -> None:
 # Interaction and context
 # ---------------------------------------------------------------------------
 
+
 async def test_search_issues(client: GitLabClient, project: str) -> None:
     _header(f"search_issues ({project})")
     # Search for something likely to exist
-    result = await search_issues.handle(client, {"search_term": "fix", "project": project})
+    result = await search_issues.handle(
+        client, {"search_term": "fix", "project": project}
+    )
     print(f"  Found {result['count']} issues matching 'fix'")
-    for issue in result['issues'][:3]:
+    for issue in result["issues"][:3]:
         print(f"    #{issue['iid']}: {issue['title']}")
 
 
@@ -218,13 +251,14 @@ async def test_search_issues(client: GitLabClient, project: str) -> None:
 # Project analysis
 # ---------------------------------------------------------------------------
 
+
 async def test_inspect_project(client: GitLabClient, project: str) -> None:
     _header(f"inspect_project ({project})")
     result = await inspect_project.handle(client, {"project": project})
-    
+
     print(f"  Ecosystems: {result['ecosystems']}")
     print(f"  Build systems: {result['build_systems']}")
-    
+
     ci = result.get("ci_config", {})
     if ci.get("found"):
         print(f"  CI Config: Found ({ci.get('path', 'unknown')})")
@@ -233,16 +267,19 @@ async def test_inspect_project(client: GitLabClient, project: str) -> None:
             print(f"    Stages: {analysis['stages']}")
     else:
         print("  CI Config: Not found")
-        
-    print(f"  Dependencies found: {sum(len(f['items']) for f in result['dependencies'])}")
-    for f in result['dependencies']:
-        if f['items']:
+
+    print(
+        f"  Dependencies found: {sum(len(f['items']) for f in result['dependencies'])}"
+    )
+    for f in result["dependencies"]:
+        if f["items"]:
             print(f"    {f['source_file']}: {len(f['items'])} items")
 
 
 # ---------------------------------------------------------------------------
 # Release and version tools
 # ---------------------------------------------------------------------------
+
 
 async def test_list_tags(client: GitLabClient, project: str) -> str | None:
     _header(f"list_tags ({project})")
@@ -258,7 +295,9 @@ async def test_list_tags(client: GitLabClient, project: str) -> str | None:
     if first_tag:
         prefix = first_tag[:2]
         _sub(f"filtered search: '{prefix}'")
-        filtered = await list_tags.handle(client, {"project": project, "search": prefix, "per_page": 5})
+        filtered = await list_tags.handle(
+            client, {"project": project, "search": prefix, "per_page": 5}
+        )
         print(f"  Matching tags: {filtered['total_tags']}")
 
     return first_tag
@@ -280,7 +319,9 @@ async def test_list_releases(client: GitLabClient, project: str) -> str | None:
 
 async def test_get_release(client: GitLabClient, project: str, tag_name: str) -> None:
     _header(f"get_release ({project}, tag={tag_name})")
-    result = await get_release.handle(client, {"project": project, "tag_name": tag_name})
+    result = await get_release.handle(
+        client, {"project": project, "tag_name": tag_name}
+    )
     if not result.get("found"):
         print(f"  {result.get('error', 'Not found')}")
         return
@@ -289,16 +330,21 @@ async def test_get_release(client: GitLabClient, project: str, tag_name: str) ->
     commit = result.get("commit", {})
     print(f"  Commit: {commit.get('short_id')} — {commit.get('title', '')[:60]}")
     assets = result.get("assets", {})
-    print(f"  Assets: {len(assets.get('links', []))} links, {len(assets.get('sources', []))} sources")
+    print(
+        f"  Assets: {len(assets.get('links', []))} links, {len(assets.get('sources', []))} sources"
+    )
 
     _sub("non-existent release")
-    bad = await get_release.handle(client, {"project": project, "tag_name": "v999.999.999-nonexistent"})
+    bad = await get_release.handle(
+        client, {"project": project, "tag_name": "v999.999.999-nonexistent"}
+    )
     print(f"  Found: {bad.get('found')} — {bad.get('error', '')}")
 
 
 # ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
+
 
 async def main() -> None:
     settings = get_settings()
@@ -323,7 +369,7 @@ async def main() -> None:
         await test_get_project_readme(client, project)
         await test_search_code(client, project)
         await test_get_wiki_pages(client, project)
-        
+
         # Context
         await test_search_issues(client, project)
 

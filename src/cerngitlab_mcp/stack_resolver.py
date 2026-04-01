@@ -5,6 +5,7 @@ logger = logging.getLogger("cerngitlab_mcp")
 
 STACK_API_BASE = "https://lhcb-nightlies.web.cern.ch/api/v1/nightly"
 
+
 async def resolve_stack(stack_name: str) -> dict[str, str]:
     """
     Queries the LHCb nightly build API to return mapping of projects to their branch refs.

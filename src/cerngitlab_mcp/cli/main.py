@@ -26,9 +26,9 @@ from cerngitlab_mcp.cli.commands import (
 @click.version_option(version="0.1.7", prog_name="cerngitlab-cli")
 def cli() -> None:
     """CERN GitLab CLI - Tools for discovering and analyzing HEP code repositories.
-    
+
     All commands output JSON to stdout for easy piping and composition.
-    
+
     Configuration via environment variables (prefix CERNGITLAB_):
       - CERNGITLAB_GITLAB_URL: GitLab instance URL (default: https://gitlab.cern.ch)
       - CERNGITLAB_TOKEN: Personal access token (optional)

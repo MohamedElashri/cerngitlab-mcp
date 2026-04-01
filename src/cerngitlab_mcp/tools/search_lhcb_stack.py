@@ -89,7 +89,7 @@ async def handle(client: GitLabClient, arguments: dict) -> dict[str, Any]:
     # Prepare arguments for search_code
     search_args = {**arguments}
     search_args.pop("stack", None)  # remove stack before passing to generic tool
-    
+
     if ref:
         search_args["ref"] = ref
 

@@ -48,12 +48,18 @@ TOOL_DEFINITION = Tool(
 
 _DEPENDENCY_FILES: dict[str, list[str]] = {
     "python": [
-        "requirements.txt", "requirements-dev.txt", "pyproject.toml",
-        "setup.py", "Pipfile", "conda.yaml", "environment.yml",
+        "requirements.txt",
+        "requirements-dev.txt",
+        "pyproject.toml",
+        "setup.py",
+        "Pipfile",
+        "conda.yaml",
+        "environment.yml",
     ],
     "cpp": ["CMakeLists.txt", "conanfile.txt", "vcpkg.json"],
     "fortran": ["CMakeLists.txt"],
 }
+
 
 def _parse_requirements_txt(content: str) -> list[dict[str, str]]:
     """Parse a requirements.txt file."""
@@ -67,8 +73,11 @@ def _parse_requirements_txt(content: str) -> list[dict[str, str]]:
             continue
         match = re.match(r"^([a-zA-Z0-9_.-]+)\s*(.*)?$", line)
         if match:
-            deps.append({"name": match.group(1), "version_spec": (match.group(2) or "").strip()})
+            deps.append(
+                {"name": match.group(1), "version_spec": (match.group(2) or "").strip()}
+            )
     return deps
+
 
 def _parse_pyproject_toml(content: str) -> list[dict[str, str]]:
     """Parse dependencies from pyproject.toml."""
@@ -76,7 +85,9 @@ def _parse_pyproject_toml(content: str) -> list[dict[str, str]]:
     in_deps = False
     for line in content.splitlines():
         stripped = line.strip()
-        if re.match(r"^dependencies\s*=\s*\[", stripped) or re.match(r"^\[tool\.poetry\.dependencies\]", stripped):
+        if re.match(r"^dependencies\s*=\s*\[", stripped) or re.match(
+            r"^\[tool\.poetry\.dependencies\]", stripped
+        ):
             in_deps = True
             inline = re.search(r"\[(.+)\]", stripped)
             if inline:
@@ -85,7 +96,12 @@ def _parse_pyproject_toml(content: str) -> list[dict[str, str]]:
                     if item:
                         match = re.match(r"^([a-zA-Z0-9_.-]+)(.*)?$", item)
                         if match:
-                            deps.append({"name": match.group(1), "version_spec": (match.group(2) or "").strip()})
+                            deps.append(
+                                {
+                                    "name": match.group(1),
+                                    "version_spec": (match.group(2) or "").strip(),
+                                }
+                            )
                 in_deps = False
             continue
         if in_deps:
@@ -98,17 +114,26 @@ def _parse_pyproject_toml(content: str) -> list[dict[str, str]]:
             if item:
                 match = re.match(r"^([a-zA-Z0-9_.-]+)(.*)?$", item)
                 if match:
-                    deps.append({"name": match.group(1), "version_spec": (match.group(2) or "").strip()})
+                    deps.append(
+                        {
+                            "name": match.group(1),
+                            "version_spec": (match.group(2) or "").strip(),
+                        }
+                    )
     return deps
+
 
 def _parse_cmake_find_package(content: str) -> list[dict[str, str]]:
     """Extract find_package() calls from CMakeLists.txt."""
     deps = []
-    for match in re.finditer(r"find_package\s*\(\s*([a-zA-Z0-9_]+)(?:\s+([0-9][^\s)]*))?\s*", content):
+    for match in re.finditer(
+        r"find_package\s*\(\s*([a-zA-Z0-9_]+)(?:\s+([0-9][^\s)]*))?\s*", content
+    ):
         name = match.group(1)
         version = match.group(2) or ""
         deps.append({"name": name, "version_spec": version})
     return deps
+
 
 _DEP_PARSERS: dict[str, Any] = {
     "requirements.txt": _parse_requirements_txt,
@@ -135,26 +160,37 @@ _BUILD_FILES: list[dict[str, str]] = [
 # CI Logic
 # ---------------------------------------------------------------------------
 
+
 def _analyze_ci_yaml(content: str) -> dict[str, Any]:
     """Extract structural information from a .gitlab-ci.yml file."""
     analysis: dict[str, Any] = {}
-    
+
     stages_match = re.search(r"^stages:\s*\n((?:\s+-\s+.+\n?)+)", content, re.MULTILINE)
     if stages_match:
         stages = re.findall(r"-\s+(\S+)", stages_match.group(1))
         analysis["stages"] = stages
 
     reserved = {
-        "stages", "variables", "default", "include", "image", "services",
-        "before_script", "after_script", "cache", "workflow",
+        "stages",
+        "variables",
+        "default",
+        "include",
+        "image",
+        "services",
+        "before_script",
+        "after_script",
+        "cache",
+        "workflow",
     }
     jobs = []
-    for match in re.finditer(r"^([a-zA-Z_][a-zA-Z0-9_.-]*):\s*$", content, re.MULTILINE):
+    for match in re.finditer(
+        r"^([a-zA-Z_][a-zA-Z0-9_.-]*):\s*$", content, re.MULTILINE
+    ):
         key = match.group(1)
         if key not in reserved and not key.startswith("."):
             jobs.append(key)
     analysis["jobs"] = jobs
-    
+
     # Extract image
     image_match = re.search(r"^image:\s+(.+)$", content, re.MULTILINE)
     if image_match:
@@ -166,6 +202,7 @@ def _analyze_ci_yaml(content: str) -> dict[str, Any]:
 # ---------------------------------------------------------------------------
 # Main Handle
 # ---------------------------------------------------------------------------
+
 
 async def handle(client: GitLabClient, arguments: dict) -> dict[str, Any]:
     """Execute the inspect_project tool."""
@@ -189,7 +226,7 @@ async def handle(client: GitLabClient, arguments: dict) -> dict[str, Any]:
 
     # 1. Gather all file paths we want to check (deduplicated)
     files_to_check = set()
-    file_metadata = {} # path -> type (dep/build)
+    file_metadata: dict[str, Any] = {}  # path -> type (dep/build)
 
     for eco, files in _DEPENDENCY_FILES.items():
         for f in files:
@@ -201,7 +238,7 @@ async def handle(client: GitLabClient, arguments: dict) -> dict[str, Any]:
         files_to_check.add(entry["file"])
         file_metadata.setdefault(entry["file"], {"types": []})
         file_metadata[entry["file"]]["types"].append(("build", entry["build_system"]))
-    
+
     files_to_check.add(".gitlab-ci.yml")
 
     # 2. Fetch all files concurrently
@@ -213,22 +250,22 @@ async def handle(client: GitLabClient, arguments: dict) -> dict[str, Any]:
 
     tasks = [_fetch_and_process(p) for p in files_to_check]
     fetched = await asyncio.gather(*tasks)
-    
+
     discovered_ecosystems = set()
     discovered_build_systems = set()
 
     for path, content in fetched:
         if content is None:
             continue
-            
+
         results["files_analyzed"] += 1
-        
+
         # Analyze CI
         if path == ".gitlab-ci.yml":
             results["ci_config"] = {
                 "found": True,
                 "analysis": _analyze_ci_yaml(content),
-                "raw_preview": content[:200]
+                "raw_preview": content[:200],
             }
             continue
 
@@ -243,12 +280,14 @@ async def handle(client: GitLabClient, arguments: dict) -> dict[str, Any]:
                 if parser:
                     deps = parser(content)
                     if deps:
-                        results["dependencies"].append({
-                            "source_file": path,
-                            "ecosystem": value,
-                            "count": len(deps),
-                            "items": deps[:10]  # Limit output
-                        })
+                        results["dependencies"].append(
+                            {
+                                "source_file": path,
+                                "ecosystem": value,
+                                "count": len(deps),
+                                "items": deps[:10],  # Limit output
+                            }
+                        )
             elif type_name == "build":
                 discovered_build_systems.add(value)
 

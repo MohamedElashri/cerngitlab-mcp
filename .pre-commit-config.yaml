@@ -1,0 +1,58 @@
+# Pre-commit hooks that mirror CI workflow
+repos:
+  # Basic file checks
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-toml
+      - id: check-json
+      - id: check-merge-conflict
+      - id: check-added-large-files
+      - id: mixed-line-ending
+
+  # Ruff linting (matches CI: uv run ruff check .)
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.8.4
+    hooks:
+      - id: ruff
+        args: [--fix, --exit-non-zero-on-fix]
+      - id: ruff-format
+
+  # Python testing (matches CI: uv run pytest -v)
+  - repo: local
+    hooks:
+      - id: pytest
+        name: pytest
+        entry: uv run pytest
+        language: system
+        types: [python]
+        pass_filenames: false
+        always_run: true
+        args: [-v, --ignore=tests/test_integration.py]
+
+  # Package building check (matches CI: uv build)
+  - repo: local
+    hooks:
+      - id: build-check
+        name: build-check
+        entry: uv build
+        language: system
+        pass_filenames: false
+        always_run: true
+        stages: [manual]  # Only run when explicitly called with --hook-stage manual
+
+  # Type checking (additional quality check)
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.13.0
+    hooks:
+      - id: mypy
+        additional_dependencies: [types-requests, types-click]
+        args: [--ignore-missing-imports, --no-strict-optional, --disable-error-code=import-untyped]
+        exclude: ^(tests/|benchmark/)
+
+# Configuration
+default_stages: [pre-commit]
+fail_fast: false

@@ -149,6 +149,9 @@ git clone https://github.com/MohamedElashri/cerngitlab-mcp
 cd cerngitlab-mcp
 uv sync
 
+# Install pre-commit hooks
+uv run pre-commit install
+
 # Run unit tests
 uv run pytest -v
 
@@ -157,6 +160,36 @@ uv run python tests/test_integration.py
 
 # Lint
 uv run ruff check .
+```
+
+### Pre-commit Hooks
+
+This project uses pre-commit hooks to ensure code quality and consistency. The hooks mirror the CI workflow checks:
+
+```bash
+# Install pre-commit (included in dev dependencies)
+uv sync
+
+# Install the git hooks
+uv run pre-commit install
+
+# Run hooks on all files (optional)
+uv run pre-commit run --all-files
+
+# Run specific hook
+uv run pre-commit run ruff --all-files
+```
+
+**Available hooks:**
+- **File checks**: trailing whitespace, end-of-file, YAML/TOML validation
+- **Ruff**: linting and formatting (matches CI: `uv run ruff check .`)
+- **Pytest**: unit tests excluding integration tests (matches CI: `uv run pytest -v`)
+- **MyPy**: type checking for better code quality
+- **Build check**: package building verification (manual stage only)
+
+The hooks automatically run on `git commit`. To bypass hooks temporarily:
+```bash
+git commit --no-verify -m "commit message"
 ```
 
 

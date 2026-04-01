@@ -47,14 +47,14 @@ class TestMcpServerCore:
     def test_get_tool_definitions(self, core):
         """Test that get_tool_definitions returns expected tools."""
         tools = core.get_tool_definitions()
-        
+
         # Should have at least the test_connectivity tool plus all the imported tools
         assert len(tools) >= 14  # test_connectivity + 13 imported tools
-        
+
         tool_names = [tool.name for tool in tools]
         expected_tools = [
             "test_connectivity",
-            "search_projects", 
+            "search_projects",
             "get_project_info",
             "list_project_files",
             "get_file_content",
@@ -68,33 +68,39 @@ class TestMcpServerCore:
             "get_release",
             "list_tags",
         ]
-        
+
         for expected_tool in expected_tools:
             assert expected_tool in tool_names
 
     @pytest.mark.asyncio
-    async def test_handle_tool_call_test_connectivity_success(self, core, mock_gitlab_client):
+    async def test_handle_tool_call_test_connectivity_success(
+        self, core, mock_gitlab_client
+    ):
         """Test successful test_connectivity tool call."""
         mock_gitlab_client.test_connection.return_value = {
             "status": "connected",
             "version": "16.0.0",
-            "revision": "abc123"
+            "revision": "abc123",
         }
-        
+
         result = await core.handle_tool_call("test_connectivity", {})
-        
+
         assert result["success"] is True
         assert result["data"]["status"] == "connected"
         assert result["data"]["version"] == "16.0.0"
         mock_gitlab_client.test_connection.assert_called_once()
 
     @pytest.mark.asyncio
-    async def test_handle_tool_call_test_connectivity_error(self, core, mock_gitlab_client):
+    async def test_handle_tool_call_test_connectivity_error(
+        self, core, mock_gitlab_client
+    ):
         """Test test_connectivity tool call with GitLab error."""
-        mock_gitlab_client.test_connection.side_effect = CERNGitLabError("Connection failed")
-        
+        mock_gitlab_client.test_connection.side_effect = CERNGitLabError(
+            "Connection failed"
+        )
+
         result = await core.handle_tool_call("test_connectivity", {})
-        
+
         assert result["success"] is False
         assert "Connection failed" in result["error"]
 
@@ -102,7 +108,7 @@ class TestMcpServerCore:
     async def test_handle_tool_call_unknown_tool(self, core):
         """Test handling of unknown tool name."""
         result = await core.handle_tool_call("unknown_tool", {})
-        
+
         assert result["success"] is False
         assert "Unknown tool: unknown_tool" in result["error"]
 
@@ -113,9 +119,9 @@ class TestMcpServerCore:
         mock_handler = AsyncMock()
         mock_handler.handle.side_effect = ValueError("Invalid arguments")
         core._tool_handlers["search_projects"] = mock_handler
-        
+
         result = await core.handle_tool_call("search_projects", {"invalid": "args"})
-        
+
         assert result["success"] is False
         assert "Invalid arguments" in result["error"]
 
@@ -126,9 +132,9 @@ class TestMcpServerCore:
         mock_handler = AsyncMock()
         mock_handler.handle.side_effect = RuntimeError("Unexpected error")
         core._tool_handlers["search_projects"] = mock_handler
-        
+
         result = await core.handle_tool_call("search_projects", {})
-        
+
         assert result["success"] is False
         assert "Internal error" in result["error"]
 
@@ -136,10 +142,10 @@ class TestMcpServerCore:
         """Test formatting of successful responses."""
         data = {"test": "data", "number": 42}
         response = core.format_success_response(data)
-        
+
         assert len(response) == 1
         assert response[0].type == "text"
-        
+
         # Should be valid JSON
         parsed = json.loads(response[0].text)
         assert parsed == data
@@ -148,10 +154,10 @@ class TestMcpServerCore:
         """Test formatting of error responses."""
         error_message = "Test error message"
         response = core.format_error_response(error_message)
-        
+
         assert len(response) == 1
         assert response[0].type == "text"
-        
+
         # Should be valid JSON with error field
         parsed = json.loads(response[0].text)
         assert parsed["error"] == error_message

@@ -70,7 +70,9 @@ async def handle(client: GitLabClient, arguments: dict) -> dict[str, Any]:
     try:
         if project:
             encoded_project = _encode_project(project)
-            results = await client.get(f"/projects/{encoded_project}/issues", params=params)
+            results = await client.get(
+                f"/projects/{encoded_project}/issues", params=params
+            )
             scope_desc = f"project '{project}'"
         else:
             # Global issue search
@@ -87,14 +89,16 @@ async def handle(client: GitLabClient, arguments: dict) -> dict[str, Any]:
 
     formatted_results = []
     for issue in results:
-        formatted_results.append({
-            "title": issue.get("title"),
-            "description_snippet": (issue.get("description") or "")[:200],
-            "state": issue.get("state"),
-            "web_url": issue.get("web_url"),
-            "author": issue.get("author", {}).get("name"),
-            "created_at": issue.get("created_at"),
-        })
+        formatted_results.append(
+            {
+                "title": issue.get("title"),
+                "description_snippet": (issue.get("description") or "")[:200],
+                "state": issue.get("state"),
+                "web_url": issue.get("web_url"),
+                "author": issue.get("author", {}).get("name"),
+                "created_at": issue.get("created_at"),
+            }
+        )
 
     return {
         "search_term": search_term,

@@ -18,14 +18,14 @@ logger = logging.getLogger("cerngitlab_mcp")
 
 class StdioTransport:
     """Stdio transport adapter for single-user mode.
-    
+
     This maintains the original stdio behavior while using the new core abstraction.
     Provides full backward compatibility with existing stdio-based deployments.
     """
 
     def __init__(self, settings: Settings | None = None):
         """Initialize stdio transport.
-        
+
         Args:
             settings: Optional settings override. If None, uses global settings.
         """
@@ -62,7 +62,7 @@ class StdioTransport:
             """Dispatch MCP tool calls through the core."""
             core = self._get_core()
             result = await core.handle_tool_call(name, arguments)
-            
+
             if result["success"]:
                 return core.format_success_response(result["data"])
             else:
@@ -70,7 +70,7 @@ class StdioTransport:
 
     async def run(self) -> None:
         """Run the MCP server over stdio.
-        
+
         This method maintains the exact same behavior as the original server
         implementation for full backward compatibility.
         """
@@ -95,7 +95,9 @@ class StdioTransport:
                     conn_info.get("error", "unknown"),
                 )
         except Exception as exc:
-            logger.warning("GitLab connectivity check failed: %s — server will start anyway", exc)
+            logger.warning(
+                "GitLab connectivity check failed: %s — server will start anyway", exc
+            )
 
         # Run the stdio server
         async with stdio_server() as (read_stream, write_stream):
@@ -112,7 +114,7 @@ class StdioTransport:
 
 async def run_stdio_server(settings: Settings | None = None) -> None:
     """Run the MCP server in stdio mode.
-    
+
     Args:
         settings: Optional settings override. If None, uses global settings.
     """

@@ -26,7 +26,9 @@ def client(settings):
     return GitLabClient(settings)
 
 
-def make_file_response(content: str, file_name: str = "test.py", ref: str = "main") -> dict:
+def make_file_response(
+    content: str, file_name: str = "test.py", ref: str = "main"
+) -> dict:
     """Create a mock GitLab file API response."""
     encoded = base64.b64encode(content.encode("utf-8")).decode("ascii")
     return {

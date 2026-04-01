@@ -2,7 +2,7 @@
 
 import json
 import logging
-from typing import Dict, List
+from typing import Any, Dict, List
 
 from mcp.types import TextContent, Tool
 
@@ -31,7 +31,7 @@ logger = logging.getLogger("cerngitlab_mcp")
 
 class McpServerCore:
     """Transport-agnostic MCP server core containing all business logic.
-    
+
     This class handles all MCP tool operations independent of the transport layer
     (stdio, HTTP, etc.). It manages a GitLab client instance and provides methods
     for tool discovery and execution.
@@ -39,7 +39,7 @@ class McpServerCore:
 
     def __init__(self, settings: Settings, gitlab_client: GitLabClient):
         """Initialize the MCP server core.
-        
+
         Args:
             settings: Server configuration settings
             gitlab_client: GitLab API client instance
@@ -48,7 +48,7 @@ class McpServerCore:
         self.gitlab_client = gitlab_client
         self._tool_handlers = self._setup_tool_handlers()
 
-    def _setup_tool_handlers(self) -> Dict[str, any]:
+    def _setup_tool_handlers(self) -> Dict[str, Any]:
         """Set up the mapping of tool names to their handlers."""
         return {
             "test_connectivity": "_handle_test_connectivity",
@@ -101,14 +101,14 @@ class McpServerCore:
 
     async def handle_tool_call(self, name: str, arguments: dict) -> dict:
         """Handle MCP tool calls in a transport-agnostic way.
-        
+
         Args:
             name: Name of the tool to call
             arguments: Tool arguments dictionary
-            
+
         Returns:
             Dictionary containing the tool result or error information
-            
+
         Raises:
             CERNGitLabError: For GitLab-specific errors
             ValueError: For invalid tool arguments
@@ -121,7 +121,13 @@ class McpServerCore:
 
             handler_module = self._tool_handlers.get(name)
             if handler_module and handler_module != "_handle_test_connectivity":
-                result = await handler_module.handle(self.gitlab_client, arguments)
+                if hasattr(handler_module, "handle"):
+                    result = await handler_module.handle(self.gitlab_client, arguments)
+                else:
+                    return {
+                        "success": False,
+                        "error": f"Invalid handler for tool: {name}",
+                    }
                 return {"success": True, "data": result}
 
             return {"success": False, "error": f"Unknown tool: {name}"}
