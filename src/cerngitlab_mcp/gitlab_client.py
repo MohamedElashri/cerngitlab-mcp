@@ -31,7 +31,9 @@ class RateLimiter:
         """Wait until a request slot is available."""
         now = time.monotonic()
         # Remove timestamps outside the window
-        self._timestamps = [t for t in self._timestamps if now - t < self.window_seconds]
+        self._timestamps = [
+            t for t in self._timestamps if now - t < self.window_seconds
+        ]
 
         if len(self._timestamps) >= self.max_requests:
             # Wait until the oldest request exits the window
@@ -111,7 +113,9 @@ class GitLabClient:
             RateLimitError: On 429 responses after retries exhausted.
             GitLabAPIError: On other error responses.
         """
-        response = await self.request_raw(method, path, params=params, json_body=json_body)
+        response = await self.request_raw(
+            method, path, params=params, json_body=json_body
+        )
         return response.json()
 
     async def get(self, path: str, *, params: dict[str, Any] | None = None) -> Any:
@@ -148,19 +152,26 @@ class GitLabClient:
                 last_exception = exc
                 logger.warning(
                     "Request timeout (attempt %d/%d): %s %s",
-                    attempt, self.settings.max_retries, method, path,
+                    attempt,
+                    self.settings.max_retries,
+                    method,
+                    path,
                 )
                 if attempt < self.settings.max_retries:
-                    await asyncio.sleep(2 ** attempt)
+                    await asyncio.sleep(2**attempt)
                 continue
             except httpx.HTTPError as exc:
                 last_exception = exc
                 logger.warning(
                     "HTTP error (attempt %d/%d): %s %s - %s",
-                    attempt, self.settings.max_retries, method, path, exc,
+                    attempt,
+                    self.settings.max_retries,
+                    method,
+                    path,
+                    exc,
                 )
                 if attempt < self.settings.max_retries:
-                    await asyncio.sleep(2 ** attempt)
+                    await asyncio.sleep(2**attempt)
                 continue
 
             if response.status_code == 200:
@@ -174,7 +185,7 @@ class GitLabClient:
 
             if response.status_code == 429:
                 retry_after = response.headers.get("Retry-After")
-                wait = float(retry_after) if retry_after else 2 ** attempt
+                wait = float(retry_after) if retry_after else 2**attempt
                 if attempt < self.settings.max_retries:
                     logger.warning("Rate limited, retrying in %.1fs", wait)
                     await asyncio.sleep(wait)
@@ -183,16 +194,21 @@ class GitLabClient:
 
             try:
                 error_body = response.json()
-                error_msg = error_body.get("message", error_body.get("error", str(error_body)))
+                error_msg = error_body.get(
+                    "message", error_body.get("error", str(error_body))
+                )
             except Exception:
                 error_msg = response.text[:500]
 
             if response.status_code >= 500 and attempt < self.settings.max_retries:
                 logger.warning(
                     "Server error %d (attempt %d/%d): %s",
-                    response.status_code, attempt, self.settings.max_retries, error_msg,
+                    response.status_code,
+                    attempt,
+                    self.settings.max_retries,
+                    error_msg,
                 )
-                await asyncio.sleep(2 ** attempt)
+                await asyncio.sleep(2**attempt)
                 continue
 
             raise GitLabAPIError(str(error_msg), response.status_code)
@@ -249,7 +265,10 @@ class GitLabClient:
 
             logger.debug(
                 "Paginated fetch %s page %d, got %d items (total so far: %d)",
-                path, page_num + 1, len(data), len(all_results),
+                path,
+                page_num + 1,
+                len(data),
+                len(all_results),
             )
 
         return all_results
@@ -291,7 +310,9 @@ class GitLabClient:
                 result["revision"] = version_info.get("revision", "unknown")
             except AuthenticationError:
                 result["auth_valid"] = False
-                result["warning"] = "Token provided but rejected — falling back to public access"
+                result["warning"] = (
+                    "Token provided but rejected — falling back to public access"
+                )
             except Exception:
                 pass  # version endpoint may simply require auth; not critical
         else:

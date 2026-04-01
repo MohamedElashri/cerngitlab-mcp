@@ -63,7 +63,11 @@ async def handle(client: GitLabClient, arguments: dict) -> dict[str, Any]:
     # Format assets
     assets_data = data.get("assets") or {}
     links = [
-        {"name": link.get("name"), "url": link.get("url"), "link_type": link.get("link_type")}
+        {
+            "name": link.get("name"),
+            "url": link.get("url"),
+            "link_type": link.get("link_type"),
+        }
         for link in assets_data.get("links", [])
     ]
     sources = [

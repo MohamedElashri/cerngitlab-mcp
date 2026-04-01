@@ -25,11 +25,15 @@ async def resolve_ref(client: GitLabClient, encoded_project: str, ref: str) -> s
     """
     if ref:
         return ref
-    project_data = await client.get(f"/projects/{encoded_project}", params={"statistics": "false"})
+    project_data = await client.get(
+        f"/projects/{encoded_project}", params={"statistics": "false"}
+    )
     return project_data.get("default_branch", "main")
 
 
-async def fetch_file(client: GitLabClient, encoded_project: str, file_path: str, ref: str) -> str | None:
+async def fetch_file(
+    client: GitLabClient, encoded_project: str, file_path: str, ref: str
+) -> str | None:
     """Fetch and decode a file from a GitLab repository.
 
     Returns the file content as a string, or None if the file is not found.

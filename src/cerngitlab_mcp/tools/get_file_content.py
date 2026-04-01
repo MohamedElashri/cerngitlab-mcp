@@ -12,69 +12,181 @@ from cerngitlab_mcp.tools.utils import encode_project, resolve_ref
 
 
 # Common binary file extensions that should not be decoded as text
-_BINARY_EXTENSIONS = frozenset({
-    ".png", ".jpg", ".jpeg", ".gif", ".bmp", ".ico", ".webp", ".svg",
-    ".pdf", ".zip", ".gz", ".tar", ".bz2", ".xz", ".7z", ".rar",
-    ".exe", ".dll", ".so", ".dylib", ".o", ".a",
-    ".pyc", ".pyo", ".class", ".wasm",
-    ".root",  # ROOT files (HEP-specific)
-    ".pkl", ".pickle", ".npy", ".npz", ".h5", ".hdf5",
-    ".ttf", ".otf", ".woff", ".woff2",
-    ".mp3", ".mp4", ".wav", ".avi", ".mov",
-})
+_BINARY_EXTENSIONS = frozenset(
+    {
+        ".png",
+        ".jpg",
+        ".jpeg",
+        ".gif",
+        ".bmp",
+        ".ico",
+        ".webp",
+        ".svg",
+        ".pdf",
+        ".zip",
+        ".gz",
+        ".tar",
+        ".bz2",
+        ".xz",
+        ".7z",
+        ".rar",
+        ".exe",
+        ".dll",
+        ".so",
+        ".dylib",
+        ".o",
+        ".a",
+        ".pyc",
+        ".pyo",
+        ".class",
+        ".wasm",
+        ".root",  # ROOT files (HEP-specific)
+        ".pkl",
+        ".pickle",
+        ".npy",
+        ".npz",
+        ".h5",
+        ".hdf5",
+        ".ttf",
+        ".otf",
+        ".woff",
+        ".woff2",
+        ".mp3",
+        ".mp4",
+        ".wav",
+        ".avi",
+        ".mov",
+    }
+)
 
 # Known text file extensions that mimetypes may not recognize
-_TEXT_EXTENSIONS = frozenset({
-    ".yml", ".yaml", ".toml", ".cfg", ".ini", ".conf",
-    ".cmake", ".in", ".txt", ".md", ".rst", ".tex",
-    ".py", ".pyx", ".pxd", ".pyi",
-    ".cpp", ".cxx", ".cc", ".c", ".h", ".hpp", ".hxx",
-    ".java", ".scala", ".kt",
-    ".js", ".mjs", ".ts", ".tsx", ".jsx",
-    ".rs", ".go", ".rb", ".jl", ".r",
-    ".sh", ".bash", ".zsh", ".fish",
-    ".f90", ".f95", ".f03", ".f",
-    ".json", ".xml", ".html", ".htm", ".css", ".sql",
-    ".gitignore", ".gitmodules", ".gitattributes",
-    ".dockerignore",
-    ".env", ".editorconfig",
-})
+_TEXT_EXTENSIONS = frozenset(
+    {
+        ".yml",
+        ".yaml",
+        ".toml",
+        ".cfg",
+        ".ini",
+        ".conf",
+        ".cmake",
+        ".in",
+        ".txt",
+        ".md",
+        ".rst",
+        ".tex",
+        ".py",
+        ".pyx",
+        ".pxd",
+        ".pyi",
+        ".cpp",
+        ".cxx",
+        ".cc",
+        ".c",
+        ".h",
+        ".hpp",
+        ".hxx",
+        ".java",
+        ".scala",
+        ".kt",
+        ".js",
+        ".mjs",
+        ".ts",
+        ".tsx",
+        ".jsx",
+        ".rs",
+        ".go",
+        ".rb",
+        ".jl",
+        ".r",
+        ".sh",
+        ".bash",
+        ".zsh",
+        ".fish",
+        ".f90",
+        ".f95",
+        ".f03",
+        ".f",
+        ".json",
+        ".xml",
+        ".html",
+        ".htm",
+        ".css",
+        ".sql",
+        ".gitignore",
+        ".gitmodules",
+        ".gitattributes",
+        ".dockerignore",
+        ".env",
+        ".editorconfig",
+    }
+)
 
 # Filenames (that are without extension) that are known text files
-_TEXT_FILENAMES = frozenset({
-    "Makefile", "CMakeLists.txt", "Dockerfile", "Jenkinsfile",
-    "README", "LICENSE", "CHANGELOG", "CONTRIBUTING",
-    ".gitignore", ".gitmodules", ".gitattributes",
-    ".gitlab-ci.yml", ".clang-format", ".clang-tidy",
-})
+_TEXT_FILENAMES = frozenset(
+    {
+        "Makefile",
+        "CMakeLists.txt",
+        "Dockerfile",
+        "Jenkinsfile",
+        "README",
+        "LICENSE",
+        "CHANGELOG",
+        "CONTRIBUTING",
+        ".gitignore",
+        ".gitmodules",
+        ".gitattributes",
+        ".gitlab-ci.yml",
+        ".clang-format",
+        ".clang-tidy",
+    }
+)
 
 # Map file extensions to language hints for syntax highlighting
 _LANGUAGE_HINTS: dict[str, str] = {
-    ".py": "python", ".pyx": "python", ".pyi": "python",
-    ".cpp": "cpp", ".cxx": "cpp", ".cc": "cpp", ".C": "cpp",
+    ".py": "python",
+    ".pyx": "python",
+    ".pyi": "python",
+    ".cpp": "cpp",
+    ".cxx": "cpp",
+    ".cc": "cpp",
+    ".C": "cpp",
     ".c": "c",
-    ".h": "cpp", ".hpp": "cpp", ".hxx": "cpp",
+    ".h": "cpp",
+    ".hpp": "cpp",
+    ".hxx": "cpp",
     ".java": "java",
-    ".js": "javascript", ".mjs": "javascript",
-    ".ts": "typescript", ".tsx": "typescript",
+    ".js": "javascript",
+    ".mjs": "javascript",
+    ".ts": "typescript",
+    ".tsx": "typescript",
     ".rs": "rust",
     ".go": "go",
     ".rb": "ruby",
-    ".sh": "bash", ".bash": "bash", ".zsh": "bash",
-    ".yml": "yaml", ".yaml": "yaml",
+    ".sh": "bash",
+    ".bash": "bash",
+    ".zsh": "bash",
+    ".yml": "yaml",
+    ".yaml": "yaml",
     ".json": "json",
     ".xml": "xml",
-    ".html": "html", ".htm": "html",
+    ".html": "html",
+    ".htm": "html",
     ".css": "css",
     ".sql": "sql",
-    ".md": "markdown", ".markdown": "markdown",
+    ".md": "markdown",
+    ".markdown": "markdown",
     ".tex": "latex",
     ".cmake": "cmake",
     ".toml": "toml",
-    ".ini": "ini", ".cfg": "ini",
-    ".r": "r", ".R": "r",
+    ".ini": "ini",
+    ".cfg": "ini",
+    ".r": "r",
+    ".R": "r",
     ".jl": "julia",
-    ".f90": "fortran", ".f95": "fortran", ".f03": "fortran", ".f": "fortran",
+    ".f90": "fortran",
+    ".f95": "fortran",
+    ".f03": "fortran",
+    ".f": "fortran",
 }
 
 # Map full filenames to language hints
@@ -141,7 +253,11 @@ def _is_binary(file_path: str) -> bool:
     # Fall back to mimetypes
     mime_type, _ = mimetypes.guess_type(file_path)
     if mime_type and not mime_type.startswith("text/"):
-        return mime_type not in ("application/json", "application/xml", "application/javascript")
+        return mime_type not in (
+            "application/json",
+            "application/xml",
+            "application/javascript",
+        )
     return False
 
 
@@ -211,7 +327,9 @@ async def handle(client: GitLabClient, arguments: dict) -> dict[str, Any]:
                 result["content"] = base64.b64decode(content_encoded).decode("utf-8")
             except (UnicodeDecodeError, ValueError):
                 result["is_binary"] = True
-                result["content"] = f"[Binary file, {size} bytes — failed to decode as UTF-8]"
+                result["content"] = (
+                    f"[Binary file, {size} bytes — failed to decode as UTF-8]"
+                )
         else:
             result["content"] = content_encoded
 

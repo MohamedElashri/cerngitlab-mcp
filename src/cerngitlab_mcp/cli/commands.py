@@ -53,15 +53,29 @@ def _run_async(coro):
 # search-projects
 # ---------------------------------------------------------------------------
 
+
 @click.command("search-projects")
-@click.option("--query", "-q", default="", help="Search query (matches project name, description)")
-@click.option("--language", "-l", default="", help="Filter by language (e.g., python, c++)")
-@click.option("--topic", "-t", default="", help="Filter by topic tag (e.g., physics, root)")
-@click.option("--sort-by", default="last_activity_at", 
-              type=click.Choice(["last_activity_at", "name", "created_at", "stars"]),
-              help="Sort field")
-@click.option("--order", default="desc", type=click.Choice(["desc", "asc"]), help="Sort order")
-@click.option("--per-page", default=20, type=click.IntRange(1, 100), help="Results count (1-100)")
+@click.option(
+    "--query", "-q", default="", help="Search query (matches project name, description)"
+)
+@click.option(
+    "--language", "-l", default="", help="Filter by language (e.g., python, c++)"
+)
+@click.option(
+    "--topic", "-t", default="", help="Filter by topic tag (e.g., physics, root)"
+)
+@click.option(
+    "--sort-by",
+    default="last_activity_at",
+    type=click.Choice(["last_activity_at", "name", "created_at", "stars"]),
+    help="Sort field",
+)
+@click.option(
+    "--order", default="desc", type=click.Choice(["desc", "asc"]), help="Sort order"
+)
+@click.option(
+    "--per-page", default=20, type=click.IntRange(1, 100), help="Results count (1-100)"
+)
 def search_projects_cmd(
     query: str,
     language: str,
@@ -71,7 +85,7 @@ def search_projects_cmd(
     per_page: int,
 ) -> None:
     """Search for public CERN GitLab projects by keywords, topics, or language."""
-    
+
     async def _run():
         client = _create_client()
         try:
@@ -89,7 +103,7 @@ def search_projects_cmd(
             _output_error(exc.message)
         finally:
             await client.close()
-    
+
     _run_async(_run())
 
 
@@ -97,11 +111,17 @@ def search_projects_cmd(
 # get-project-info
 # ---------------------------------------------------------------------------
 
+
 @click.command("get-project-info")
-@click.option("--project", "-p", required=True, help="Project ID or path (e.g., 12345 or lhcb/allen)")
+@click.option(
+    "--project",
+    "-p",
+    required=True,
+    help="Project ID or path (e.g., 12345 or lhcb/allen)",
+)
 def get_project_info_cmd(project: str) -> None:
     """Get detailed information about a specific project."""
-    
+
     async def _run():
         client = _create_client()
         try:
@@ -112,7 +132,7 @@ def get_project_info_cmd(project: str) -> None:
             _output_error(exc.message)
         finally:
             await client.close()
-    
+
     _run_async(_run())
 
 
@@ -120,12 +140,15 @@ def get_project_info_cmd(project: str) -> None:
 # list-files
 # ---------------------------------------------------------------------------
 
+
 @click.command("list-files")
 @click.option("--project", "-p", required=True, help="Project ID or path")
 @click.option("--path", default="", help="Subdirectory path to list")
 @click.option("--ref", default="", help="Branch/tag/commit")
 @click.option("--recursive", is_flag=True, help="List recursively")
-@click.option("--per-page", default=100, type=click.IntRange(1, 100), help="Results count")
+@click.option(
+    "--per-page", default=100, type=click.IntRange(1, 100), help="Results count"
+)
 def list_files_cmd(
     project: str,
     path: str,
@@ -134,7 +157,7 @@ def list_files_cmd(
     per_page: int,
 ) -> None:
     """List files and directories in a project's repository."""
-    
+
     async def _run():
         client = _create_client()
         try:
@@ -151,7 +174,7 @@ def list_files_cmd(
             _output_error(exc.message)
         finally:
             await client.close()
-    
+
     _run_async(_run())
 
 
@@ -159,13 +182,14 @@ def list_files_cmd(
 # get-file
 # ---------------------------------------------------------------------------
 
+
 @click.command("get-file")
 @click.option("--project", "-p", required=True, help="Project ID or path")
 @click.option("--file-path", "-f", required=True, help="Path to file within repository")
 @click.option("--ref", default="", help="Branch/tag/commit")
 def get_file_cmd(project: str, file_path: str, ref: str) -> None:
     """Retrieve the content of a specific file from a repository."""
-    
+
     async def _run():
         client = _create_client()
         try:
@@ -180,7 +204,7 @@ def get_file_cmd(project: str, file_path: str, ref: str) -> None:
             _output_error(exc.message)
         finally:
             await client.close()
-    
+
     _run_async(_run())
 
 
@@ -188,12 +212,13 @@ def get_file_cmd(project: str, file_path: str, ref: str) -> None:
 # get-readme
 # ---------------------------------------------------------------------------
 
+
 @click.command("get-readme")
 @click.option("--project", "-p", required=True, help="Project ID or path")
 @click.option("--ref", default="", help="Branch/tag/commit")
 def get_readme_cmd(project: str, ref: str) -> None:
     """Get the README content for a project."""
-    
+
     async def _run():
         client = _create_client()
         try:
@@ -204,7 +229,7 @@ def get_readme_cmd(project: str, ref: str) -> None:
             _output_error(exc.message)
         finally:
             await client.close()
-    
+
     _run_async(_run())
 
 
@@ -212,14 +237,21 @@ def get_readme_cmd(project: str, ref: str) -> None:
 # search-code
 # ---------------------------------------------------------------------------
 
+
 @click.command("search-code")
 @click.option("--search-term", "-s", required=True, help="Code/text to search for")
 @click.option("--project", "-p", default="", help="Limit to specific project")
-@click.option("--scope", default="blobs", type=click.Choice(["blobs", "filenames"]), 
-              help="Search scope: blobs (content) or filenames")
+@click.option(
+    "--scope",
+    default="blobs",
+    type=click.Choice(["blobs", "filenames"]),
+    help="Search scope: blobs (content) or filenames",
+)
 @click.option("--ref", default="", help="Git branch/tag to search within")
 @click.option("--page", default=1, type=click.IntRange(1), help="Page number")
-@click.option("--per-page", default=20, type=click.IntRange(1, 100), help="Results count")
+@click.option(
+    "--per-page", default=20, type=click.IntRange(1, 100), help="Results count"
+)
 def search_code_cmd(
     search_term: str,
     project: str,
@@ -229,7 +261,7 @@ def search_code_cmd(
     per_page: int,
 ) -> None:
     """Search for code snippets across CERN GitLab repositories."""
-    
+
     async def _run():
         client = _create_client()
         try:
@@ -247,7 +279,7 @@ def search_code_cmd(
             _output_error(exc.message)
         finally:
             await client.close()
-    
+
     _run_async(_run())
 
 
@@ -255,15 +287,22 @@ def search_code_cmd(
 # search-lhcb-stack
 # ---------------------------------------------------------------------------
 
+
 @click.command("search-lhcb-stack")
 @click.option("--search-term", "-s", required=True, help="Code/text to search for")
 @click.option("--stack", required=True, help="Software stack name (e.g., sim11)")
 @click.option("--project", "-p", default="", help="Limit to specific project")
-@click.option("--scope", default="blobs", type=click.Choice(["blobs", "filenames"]), 
-              help="Search scope")
+@click.option(
+    "--scope",
+    default="blobs",
+    type=click.Choice(["blobs", "filenames"]),
+    help="Search scope",
+)
 @click.option("--ref", default="", help="Override automatic ref resolution")
 @click.option("--page", default=1, type=click.IntRange(1), help="Page number")
-@click.option("--per-page", default=20, type=click.IntRange(1, 100), help="Results count")
+@click.option(
+    "--per-page", default=20, type=click.IntRange(1, 100), help="Results count"
+)
 def search_lhcb_stack_cmd(
     search_term: str,
     stack: str,
@@ -274,7 +313,7 @@ def search_lhcb_stack_cmd(
     per_page: int,
 ) -> None:
     """Search for code within a specific LHCb software stack."""
-    
+
     async def _run():
         client = _create_client()
         try:
@@ -293,7 +332,7 @@ def search_lhcb_stack_cmd(
             _output_error(exc.message)
         finally:
             await client.close()
-    
+
     _run_async(_run())
 
 
@@ -301,12 +340,19 @@ def search_lhcb_stack_cmd(
 # search-issues
 # ---------------------------------------------------------------------------
 
+
 @click.command("search-issues")
 @click.option("--search-term", "-s", required=True, help="Keywords to search for")
 @click.option("--project", "-p", default="", help="Limit to specific project")
-@click.option("--state", default="opened", type=click.Choice(["opened", "closed", "all"]), 
-              help="Issue state")
-@click.option("--per-page", default=10, type=click.IntRange(1, 100), help="Results count")
+@click.option(
+    "--state",
+    default="opened",
+    type=click.Choice(["opened", "closed", "all"]),
+    help="Issue state",
+)
+@click.option(
+    "--per-page", default=10, type=click.IntRange(1, 100), help="Results count"
+)
 def search_issues_cmd(
     search_term: str,
     project: str,
@@ -314,7 +360,7 @@ def search_issues_cmd(
     per_page: int,
 ) -> None:
     """Search for issues and discussions in a project."""
-    
+
     async def _run():
         client = _create_client()
         try:
@@ -330,7 +376,7 @@ def search_issues_cmd(
             _output_error(exc.message)
         finally:
             await client.close()
-    
+
     _run_async(_run())
 
 
@@ -338,12 +384,13 @@ def search_issues_cmd(
 # get-wiki
 # ---------------------------------------------------------------------------
 
+
 @click.command("get-wiki")
 @click.option("--project", "-p", required=True, help="Project ID or path")
 @click.option("--page-slug", default="", help="Specific page slug (omit to list all)")
 def get_wiki_cmd(project: str, page_slug: str) -> None:
     """Access project wiki pages."""
-    
+
     async def _run():
         client = _create_client()
         try:
@@ -354,7 +401,7 @@ def get_wiki_cmd(project: str, page_slug: str) -> None:
             _output_error(exc.message)
         finally:
             await client.close()
-    
+
     _run_async(_run())
 
 
@@ -362,12 +409,13 @@ def get_wiki_cmd(project: str, page_slug: str) -> None:
 # inspect-project
 # ---------------------------------------------------------------------------
 
+
 @click.command("inspect-project")
 @click.option("--project", "-p", required=True, help="Project ID or path")
 @click.option("--ref", default="", help="Branch/tag/commit")
 def inspect_project_cmd(project: str, ref: str) -> None:
     """Analyze a project's structure, build system, and dependencies."""
-    
+
     async def _run():
         client = _create_client()
         try:
@@ -378,7 +426,7 @@ def inspect_project_cmd(project: str, ref: str) -> None:
             _output_error(exc.message)
         finally:
             await client.close()
-    
+
     _run_async(_run())
 
 
@@ -386,12 +434,15 @@ def inspect_project_cmd(project: str, ref: str) -> None:
 # list-releases
 # ---------------------------------------------------------------------------
 
+
 @click.command("list-releases")
 @click.option("--project", "-p", required=True, help="Project ID or path")
-@click.option("--per-page", default=20, type=click.IntRange(1, 100), help="Results count")
+@click.option(
+    "--per-page", default=20, type=click.IntRange(1, 100), help="Results count"
+)
 def list_releases_cmd(project: str, per_page: int) -> None:
     """List releases for a project."""
-    
+
     async def _run():
         client = _create_client()
         try:
@@ -402,7 +453,7 @@ def list_releases_cmd(project: str, per_page: int) -> None:
             _output_error(exc.message)
         finally:
             await client.close()
-    
+
     _run_async(_run())
 
 
@@ -410,12 +461,13 @@ def list_releases_cmd(project: str, per_page: int) -> None:
 # get-release
 # ---------------------------------------------------------------------------
 
+
 @click.command("get-release")
 @click.option("--project", "-p", required=True, help="Project ID or path")
 @click.option("--tag-name", required=True, help="Release tag (e.g., v1.0.0)")
 def get_release_cmd(project: str, tag_name: str) -> None:
     """Get detailed information about a specific release."""
-    
+
     async def _run():
         client = _create_client()
         try:
@@ -426,7 +478,7 @@ def get_release_cmd(project: str, tag_name: str) -> None:
             _output_error(exc.message)
         finally:
             await client.close()
-    
+
     _run_async(_run())
 
 
@@ -434,14 +486,19 @@ def get_release_cmd(project: str, tag_name: str) -> None:
 # list-tags
 # ---------------------------------------------------------------------------
 
+
 @click.command("list-tags")
 @click.option("--project", "-p", required=True, help="Project ID or path")
 @click.option("--search", default="", help="Filter by name prefix")
-@click.option("--sort", default="desc", type=click.Choice(["asc", "desc"]), help="Sort order")
-@click.option("--per-page", default=20, type=click.IntRange(1, 100), help="Results count")
+@click.option(
+    "--sort", default="desc", type=click.Choice(["asc", "desc"]), help="Sort order"
+)
+@click.option(
+    "--per-page", default=20, type=click.IntRange(1, 100), help="Results count"
+)
 def list_tags_cmd(project: str, search: str, sort: str, per_page: int) -> None:
     """List project tags with optional filtering."""
-    
+
     async def _run():
         client = _create_client()
         try:
@@ -457,7 +514,7 @@ def list_tags_cmd(project: str, search: str, sort: str, per_page: int) -> None:
             _output_error(exc.message)
         finally:
             await client.close()
-    
+
     _run_async(_run())
 
 
@@ -465,10 +522,11 @@ def list_tags_cmd(project: str, search: str, sort: str, per_page: int) -> None:
 # test-connection
 # ---------------------------------------------------------------------------
 
+
 @click.command("test-connection")
 def test_connection_cmd() -> None:
     """Test connectivity to the CERN GitLab instance."""
-    
+
     async def _run():
         client = _create_client()
         try:
@@ -478,5 +536,5 @@ def test_connection_cmd() -> None:
             _output_error(exc.message)
         finally:
             await client.close()
-    
+
     _run_async(_run())

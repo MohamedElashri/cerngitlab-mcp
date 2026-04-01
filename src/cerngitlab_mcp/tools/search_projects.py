@@ -31,7 +31,13 @@ TOOL_DEFINITION = Tool(
             },
             "sort_by": {
                 "type": "string",
-                "enum": ["last_activity_at", "name", "created_at", "updated_at", "stars"],
+                "enum": [
+                    "last_activity_at",
+                    "name",
+                    "created_at",
+                    "updated_at",
+                    "stars",
+                ],
                 "description": "Sort results by this field (default: last_activity_at)",
             },
             "order": {

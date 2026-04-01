@@ -55,7 +55,9 @@ async def handle(client: GitLabClient, arguments: dict) -> dict[str, Any]:
 
     # Fetch project details and languages in parallel-ish (sequential for simplicity,
     # but both go through the rate-limited client)
-    project_data = await client.get(f"/projects/{encoded}", params={"statistics": "true"})
+    project_data = await client.get(
+        f"/projects/{encoded}", params={"statistics": "true"}
+    )
 
     # Fetch languages breakdown
     try:

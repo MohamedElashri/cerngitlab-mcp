@@ -103,18 +103,59 @@ def _format_filename_result(item: dict[str, Any]) -> dict[str, Any]:
 
 
 _TEXT_EXTENSIONS = {
-    ".py", ".pyx", ".pxd", ".cpp", ".cxx", ".cc", ".c", ".h", ".hpp", ".hxx",
-    ".f", ".f90", ".f95", ".f03", ".for",
-    ".cmake", ".txt", ".md", ".rst", ".cfg", ".ini", ".toml", ".yaml", ".yml",
-    ".json", ".xml", ".sh", ".bash", ".zsh",
-    ".java", ".go", ".rs", ".js", ".ts", ".rb", ".pl",
-    ".dockerfile", ".makefile",
+    ".py",
+    ".pyx",
+    ".pxd",
+    ".cpp",
+    ".cxx",
+    ".cc",
+    ".c",
+    ".h",
+    ".hpp",
+    ".hxx",
+    ".f",
+    ".f90",
+    ".f95",
+    ".f03",
+    ".for",
+    ".cmake",
+    ".txt",
+    ".md",
+    ".rst",
+    ".cfg",
+    ".ini",
+    ".toml",
+    ".yaml",
+    ".yml",
+    ".json",
+    ".xml",
+    ".sh",
+    ".bash",
+    ".zsh",
+    ".java",
+    ".go",
+    ".rs",
+    ".js",
+    ".ts",
+    ".rb",
+    ".pl",
+    ".dockerfile",
+    ".makefile",
 }
 
 _TEXT_FILENAMES = {
-    "CMakeLists.txt", "Makefile", "Dockerfile", "SConstruct", "SConscript",
-    "Jenkinsfile", "Rakefile", "Gemfile", "wscript",
-    ".gitlab-ci.yml", ".gitignore", ".gitattributes",
+    "CMakeLists.txt",
+    "Makefile",
+    "Dockerfile",
+    "SConstruct",
+    "SConscript",
+    "Jenkinsfile",
+    "Rakefile",
+    "Gemfile",
+    "wscript",
+    ".gitlab-ci.yml",
+    ".gitignore",
+    ".gitattributes",
 }
 
 
@@ -174,7 +215,7 @@ async def _process_fallback_file(
                 "ref": data.get("ref", "HEAD"),
                 "startline": start,
             }
-    
+
     return None
 
 
@@ -211,24 +252,28 @@ async def _fallback_project_search(
         tree = []
 
     # Filter to searchable text files
-    files = [e["path"] for e in tree if e.get("type") == "blob" and _is_searchable(e["path"])]    
+    files = [
+        e["path"] for e in tree if e.get("type") == "blob" and _is_searchable(e["path"])
+    ]
     MAX_FILES_TO_SCAN = 200
     files_to_scan = files[:MAX_FILES_TO_SCAN]
 
     results: list[dict[str, Any]] = []
     pattern = re.compile(re.escape(search_term), re.IGNORECASE)
-    
+
     # Concurrency limit
     semaphore = asyncio.Semaphore(20)
 
     tasks = [
-        _process_fallback_file(client, encoded_project, f, search_term, pattern, semaphore)
+        _process_fallback_file(
+            client, encoded_project, f, search_term, pattern, semaphore
+        )
         for f in files_to_scan
     ]
-    
+
     # Gather results
     file_results = await asyncio.gather(*tasks)
-    
+
     # Filter out None and collect matches
     results = [r for r in file_results if r is not None]
 
@@ -268,7 +313,7 @@ async def handle(client: GitLabClient, arguments: dict) -> dict[str, Any]:
 
     per_page = arguments.get("per_page", 20)
     per_page = max(1, min(per_page, 100))
-    
+
     page = arguments.get("page", 1)
     page = max(1, page)
 
@@ -318,7 +363,12 @@ async def handle(client: GitLabClient, arguments: dict) -> dict[str, Any]:
             # Project-scoped blob search requires it on some instances.
             if project:
                 return await _fallback_project_search(
-                    client, encoded_project, search_term, per_page, page, project,
+                    client,
+                    encoded_project,
+                    search_term,
+                    per_page,
+                    page,
+                    project,
                 )
             return {
                 "search_term": search_term,
@@ -343,7 +393,7 @@ async def handle(client: GitLabClient, arguments: dict) -> dict[str, Any]:
         formatted = [_format_filename_result(r) for r in results]
 
     # For now, we return the results of the requested page.
-    
+
     return {
         "search_term": search_term,
         "scope": scope,

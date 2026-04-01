@@ -11,8 +11,10 @@
 ## Features
 
 - **14 MCP tools** for searching, browsing, and analyzing CERN GitLab repositories
+- **Dual-mode operation** — stdio (single-user) and HTTP (multi-user) modes
 - **CLI tool** (`cerngitlab-cli`) for direct command-line usage
 - **Public access** — works without authentication for public repositories
+- **Multi-user support** — HTTP mode enables centralized deployment for multiple users
 - **HEP-focused** — dependency parsing for Python and C++ ecosystems, binary detection for `.root` files, issue search
 - **Robust** — rate limiting, retries with exponential backoff, graceful error handling
 
@@ -55,6 +57,9 @@ All settings are configured via environment variables prefixed with `CERNGITLAB_
 | `CERNGITLAB_RATE_LIMIT_PER_MINUTE` | `300` | API rate limit |
 | `CERNGITLAB_LOG_LEVEL` | `INFO` | Logging level |
 | `CERNGITLAB_DEFAULT_REF` | *(empty)* | Default Git branch or tag to search within (e.g., `main`, `master`, `v1.2.0`). Empty means search all branches. |
+| `CERNGITLAB_HTTP_MODE` | *(empty)* | Set to enable HTTP mode for multi-user deployment |
+| `CERNGITLAB_HOST` | `localhost` | HTTP mode: host to bind to |
+| `CERNGITLAB_PORT` | `8000` | HTTP mode: port to bind to |
 
 ### Authentication
 
@@ -192,6 +197,8 @@ Add to your `~/.gemini/settings.json`:
 
 ### Direct usage
 
+#### Stdio Mode (Single-User, Default)
+
 ```bash
 # Run with uvx (no install needed)
 uvx cerngitlab-mcp
@@ -199,12 +206,36 @@ uvx cerngitlab-mcp
 # Or if installed from PyPI
 cerngitlab-mcp
 
+# Explicit stdio mode
+cerngitlab-mcp --mode stdio
+
 # Or from source
 uv run cerngitlab-mcp
 
 # With authentication
 CERNGITLAB_TOKEN=glpat-xxx uvx cerngitlab-mcp
 ```
+
+#### HTTP Mode (Multi-User)
+
+```bash
+# HTTP mode for multi-user deployment
+cerngitlab-mcp --mode http --host 0.0.0.0 --port 8080
+
+# Or use environment variables
+CERNGITLAB_HTTP_MODE=true CERNGITLAB_HOST=0.0.0.0 CERNGITLAB_PORT=8080 cerngitlab-mcp
+
+# Dedicated HTTP entry point
+cerngitlab-mcp-http
+```
+
+#### Mode Selection
+
+- `--mode stdio` - Single-user mode using stdin/stdout (default)
+- `--mode http` - Multi-user mode using HTTP API
+- `--mode auto` - Auto-detect based on environment variables
+
+The server automatically detects HTTP mode if `CERNGITLAB_HTTP_MODE`, `CERNGITLAB_HOST`, or `CERNGITLAB_PORT` environment variables are set.
 
 ## Tools
 
@@ -256,6 +287,53 @@ For detailed parameter documentation, see [docs/dev.md](docs/dev.md).
 ## Development
 
 See [docs/dev.md](docs/dev.md) for development setup, project structure, testing, and release instructions.
+
+## Multi-User HTTP Deployment
+
+For centralized deployments serving multiple users, use HTTP mode:
+
+### Setup
+
+```bash
+# Start HTTP server
+cerngitlab-mcp --mode http --host 0.0.0.0 --port 8080
+
+# Or with environment variables
+CERNGITLAB_HTTP_MODE=true CERNGITLAB_HOST=0.0.0.0 CERNGITLAB_PORT=8080 cerngitlab-mcp
+```
+
+### User Authentication
+
+For demo purposes, users can be configured via environment variables:
+
+```bash
+# Set up demo users
+export CERNGITLAB_DEMO_USER_alice=glpat-alice-token
+export CERNGITLAB_DEMO_USER_bob=glpat-bob-token
+```
+
+Users authenticate with `Authorization: Bearer demo-alice` header.
+
+### API Endpoints
+
+- `GET /` - Server information
+- `GET /health` - Health check
+- `GET /tools` - List available tools (authenticated)
+- `POST /tools/{tool_name}` - Execute specific tool (authenticated)
+- `POST /mcp` - Generic MCP endpoint (authenticated)
+
+### Example Usage
+
+```bash
+# List available tools
+curl -H "Authorization: Bearer demo-alice" http://localhost:8080/tools
+
+# Execute a tool
+curl -X POST -H "Authorization: Bearer demo-alice" \
+     -H "Content-Type: application/json" \
+     -d '{"arguments": {"query": "ROOT"}}' \
+     http://localhost:8080/tools/search_projects
+```
 
 ## CLI Tool
 

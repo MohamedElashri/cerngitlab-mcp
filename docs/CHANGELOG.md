@@ -2,11 +2,37 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.7] - 2026-04-01
+
+### Added
+- **Dual-Mode Architecture**: Implemented support for both stdio (single-user) and HTTP (multi-user) modes
+  - `--mode stdio|http|auto` CLI option for mode selection
+  - Auto-detection based on environment variables (`CERNGITLAB_HTTP_MODE`, `CERNGITLAB_HOST`, `CERNGITLAB_PORT`)
+  - Dedicated entry points: `cerngitlab-mcp-stdio` and `cerngitlab-mcp-http`
+- **HTTP Multi-User Mode**: New FastAPI-based HTTP transport for centralized deployments
+  - RESTful API endpoints: `/tools`, `/tools/{tool_name}`, `/mcp`, `/health`
+  - User session isolation with per-user GitLab clients and settings
+  - Demo authentication system via environment variables (`CERNGITLAB_DEMO_USER_*`)
+  - CORS support for web-based integrations
+- **Transport Layer Abstraction**: Refactored architecture with clean separation of concerns
+  - `McpServerCore`: Transport-agnostic core logic
+  - `StdioTransport`: Single-user stdio mode (maintains backward compatibility)
+  - `HttpTransport`: Multi-user HTTP mode with session management
+
+### Changed
+- **Server Architecture**: Extracted core logic from transport concerns for better maintainability
+- **Configuration**: Added HTTP-specific environment variables for multi-user deployments
+- **Dependencies**: Added FastAPI and uvicorn for HTTP mode support
+
+### Technical Details
+- **Backward Compatibility**: 100% compatible with existing stdio-based deployments
+- **Session Management**: Automatic user session creation, isolation, and cleanup in HTTP mode
+- **Error Handling**: Improved error handling across both transport modes
+
 ## [0.1.6] - 2026-03-11
 
 ### Added
-- **`cerngitlab-cli`** Command-Line Interface**: Added a CLI tool for users to use the same tools provided by `cerngitlab-mcp` directly from the terminal. It can be used + the `SKILLS.md` file for skill + cli workflow.
-
+- **`cerngitlab-cli` Command-Line Interface**: Added a CLI tool for users to use the same tools provided by `cerngitlab-mcp` directly from the terminal. It can be used + the `SKILLS.md` file for skill + cli workflow.
 
 ## [0.1.5] - 2026-03-05
 

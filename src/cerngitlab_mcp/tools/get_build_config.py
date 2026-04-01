@@ -74,13 +74,15 @@ async def handle(client: GitLabClient, arguments: dict) -> dict[str, Any]:
             continue
 
         build_systems.append(entry["build_system"])
-        found_files.append({
-            "file": entry["file"],
-            "build_system": entry["build_system"],
-            "language": entry["language"],
-            "size": len(content),
-            "content": content,
-        })
+        found_files.append(
+            {
+                "file": entry["file"],
+                "build_system": entry["build_system"],
+                "language": entry["language"],
+                "size": len(content),
+                "content": content,
+            }
+        )
 
     return {
         "project": project,
