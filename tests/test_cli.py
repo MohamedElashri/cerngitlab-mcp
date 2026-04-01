@@ -618,7 +618,7 @@ class TestCLIHelp:
         """Test CLI version flag."""
         result = cli_runner.invoke(cli, ["--version"])
         assert result.exit_code == 0
-        assert "0.1.6" in result.output
+        assert "0.1.7" in result.output
 
     def test_command_help(self, cli_runner):
         """Test individual command help."""

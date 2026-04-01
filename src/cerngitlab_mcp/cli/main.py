@@ -23,7 +23,7 @@ from cerngitlab_mcp.cli.commands import (
 
 
 @click.group()
-@click.version_option(version="0.1.6", prog_name="cerngitlab-cli")
+@click.version_option(version="0.1.7", prog_name="cerngitlab-cli")
 def cli() -> None:
     """CERN GitLab CLI - Tools for discovering and analyzing HEP code repositories.
     

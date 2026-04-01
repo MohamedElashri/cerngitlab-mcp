@@ -1,191 +1,103 @@
-"""MCP server entry point for the CERN GitLab MCP server."""
+"""MCP server entry point for the CERN GitLab MCP server.
+
+Supports dual-mode operation:
+- stdio: Single-user mode using stdin/stdout (default, backward compatible)
+- http: Multi-user mode using HTTP API
+"""
 
 import asyncio
-import json
+import os
 import logging
 
-from mcp.server import Server
-from mcp.server.stdio import stdio_server
-from mcp.types import TextContent, Tool
+import click
 
 from cerngitlab_mcp.config import get_settings
-from cerngitlab_mcp.exceptions import CERNGitLabError
-from cerngitlab_mcp.gitlab_client import GitLabClient
-from cerngitlab_mcp.logging import setup_logging
-from cerngitlab_mcp.tools import (
-    get_file_content,
-    get_release,
-    get_project_info,
-    get_project_readme,
-    get_wiki_pages,
-    inspect_project,
-    list_releases,
-    list_project_files,
-    list_tags,
-    search_code,
-    search_lhcb_stack,
-    search_issues,
-    search_projects,
-)
+from cerngitlab_mcp.transports import run_stdio_server, run_http_server
 
 
 logger = logging.getLogger("cerngitlab_mcp")
 
-# Global instances
-_settings = get_settings()
-_gitlab_client: GitLabClient | None = None
-_server = Server("cerngitlab-mcp")
+def detect_mode() -> str:
+    """Auto-detect server mode based on environment variables.
+    
+    Returns:
+        'http' if HTTP mode is detected, 'stdio' otherwise
+    """
+    # Check for explicit HTTP mode flag
+    if os.getenv('CERNGITLAB_HTTP_MODE'):
+        return 'http'
+    
+    # Check for HTTP-specific configuration
+    if os.getenv('CERNGITLAB_HOST') or os.getenv('CERNGITLAB_PORT'):
+        return 'http'
+    
+    # Default to stdio for backward compatibility
+    return 'stdio'
 
 
-def get_gitlab_client() -> GitLabClient:
-    """Get or create the global GitLab client instance."""
-    global _gitlab_client
-    if _gitlab_client is None:
-        _gitlab_client = GitLabClient(_settings)
-    return _gitlab_client
-
-
-def _error_response(message: str) -> list[TextContent]:
-    """Create an error response for MCP tool calls."""
-    return [TextContent(type="text", text=json.dumps({"error": message}))]
-
-
-def _success_response(data: dict | list) -> list[TextContent]:
-    """Create a success response for MCP tool calls."""
-    return [TextContent(type="text", text=json.dumps(data, indent=2))]
-
-
-# ---------------------------------------------------------------------------
-# Tool definitions — test_connectivity is inline, others from tools/ modules
-# ---------------------------------------------------------------------------
-
-_TEST_CONNECTIVITY_TOOL = Tool(
-    name="test_connectivity",
-    description=(
-        "Test connectivity to the CERN GitLab instance. "
-        "Returns the GitLab version, authentication status, and connection health."
-    ),
-    inputSchema={
-        "type": "object",
-        "properties": {},
-        "required": [],
-    },
+@click.command()
+@click.option(
+    '--mode', 
+    type=click.Choice(['stdio', 'http', 'auto']), 
+    default='auto',
+    help='Server mode: stdio (single-user), http (multi-user), or auto-detect'
 )
+@click.option(
+    '--host', 
+    default='localhost',
+    help='HTTP mode: host to bind to (default: localhost)'
+)
+@click.option(
+    '--port', 
+    type=int,
+    default=8000,
+    help='HTTP mode: port to bind to (default: 8000)'
+)
+def main(mode: str, host: str, port: int) -> None:
+    """Run the CERN GitLab MCP server in the specified mode.
+    
+    Modes:
+    - stdio: Single-user mode using stdin/stdout (original behavior)
+    - http: Multi-user mode using HTTP API
+    - auto: Auto-detect mode based on environment variables
+    """
+    settings = get_settings()
+    
+    # Resolve mode
+    if mode == 'auto':
+        mode = detect_mode()
+    
+    logger.info("Starting CERN GitLab MCP server in %s mode", mode)
+    
+    if mode == 'stdio':
+        asyncio.run(run_stdio_server(settings))
+    elif mode == 'http':
+        # Override host/port from environment if set
+        env_host = os.getenv('CERNGITLAB_HOST')
+        env_port = os.getenv('CERNGITLAB_PORT')
+        
+        if env_host:
+            host = env_host
+        if env_port:
+            port = int(env_port)
+            
+        asyncio.run(run_http_server(settings, host, port))
+    else:
+        raise ValueError(f"Unknown mode: {mode}")
 
 
-@_server.list_tools()
-async def list_tools() -> list[Tool]:
-    """Return the list of available tools."""
-    return [
-        _TEST_CONNECTIVITY_TOOL,
-        search_projects.TOOL_DEFINITION,
-        get_project_info.TOOL_DEFINITION,
-        list_project_files.TOOL_DEFINITION,
-        get_file_content.TOOL_DEFINITION,
-        get_project_readme.TOOL_DEFINITION,
-        search_code.TOOL_DEFINITION,
-        search_lhcb_stack.TOOL_DEFINITION,
-        search_issues.TOOL_DEFINITION,
-        get_wiki_pages.TOOL_DEFINITION,
-        inspect_project.TOOL_DEFINITION,
-        list_releases.TOOL_DEFINITION,
-        get_release.TOOL_DEFINITION,
-        list_tags.TOOL_DEFINITION,
-    ]
+def main_stdio() -> None:
+    """Entry point for stdio mode only."""
+    settings = get_settings()
+    asyncio.run(run_stdio_server(settings))
 
 
-# ---------------------------------------------------------------------------
-# Tool dispatch
-# ---------------------------------------------------------------------------
-
-_TOOL_HANDLERS = {
-    "test_connectivity": "_handle_test_connectivity",
-    "search_projects": search_projects,
-    "get_project_info": get_project_info,
-    "list_project_files": list_project_files,
-    "get_file_content": get_file_content,
-    "get_project_readme": get_project_readme,
-    "search_code": search_code,
-    "search_lhcb_stack": search_lhcb_stack,
-    "search_issues": search_issues,
-    "get_wiki_pages": get_wiki_pages,
-    "inspect_project": inspect_project,
-    "list_releases": list_releases,
-    "get_release": get_release,
-    "list_tags": list_tags,
-}
-
-
-@_server.call_tool()
-async def call_tool(name: str, arguments: dict) -> list[TextContent]:
-    """Dispatch MCP tool calls."""
-    try:
-        client = get_gitlab_client()
-
-        if name == "test_connectivity":
-            result = await client.test_connection()
-            return _success_response(result)
-
-        handler_module = _TOOL_HANDLERS.get(name)
-        if handler_module and handler_module != "_handle_test_connectivity":
-            result = await handler_module.handle(client, arguments)
-            return _success_response(result)
-
-        return _error_response(f"Unknown tool: {name}")
-    except CERNGitLabError as exc:
-        logger.error("Tool %s failed: %s", name, exc.message)
-        return _error_response(exc.message)
-    except ValueError as exc:
-        logger.warning("Tool %s bad input: %s", name, exc)
-        return _error_response(str(exc))
-    except Exception as exc:
-        logger.exception("Unexpected error in tool %s", name)
-        return _error_response(f"Internal error: {exc}")
-
-
-# ---------------------------------------------------------------------------
-# Server lifecycle
-# ---------------------------------------------------------------------------
-
-async def run_server() -> None:
-    """Run the MCP server over stdio."""
-    setup_logging(_settings.log_level)
-    logger.info("Starting CERN GitLab MCP server")
-    logger.info("GitLab URL: %s", _settings.gitlab_url)
-    logger.info("Authenticated: %s", bool(_settings.token))
-
-    # Non-blocking connectivity check — log result but never fail startup
-    client = get_gitlab_client()
-    try:
-        conn_info = await client.test_connection()
-        if conn_info["status"] == "connected":
-            logger.info(
-                "Connected to GitLab %s (revision: %s)",
-                conn_info.get("version", "?"),
-                conn_info.get("revision", "?"),
-            )
-        else:
-            logger.warning(
-                "GitLab connectivity check: %s — server will start anyway",
-                conn_info.get("error", "unknown"),
-            )
-    except Exception as exc:
-        logger.warning("GitLab connectivity check failed: %s — server will start anyway", exc)
-
-    async with stdio_server() as (read_stream, write_stream):
-        await _server.run(
-            read_stream,
-            write_stream,
-            _server.create_initialization_options(),
-        )
-
-    # Cleanup
-    await client.close()
-
-
-def main() -> None:
-    """Entry point for the cerngitlab-mcp command."""
-    asyncio.run(run_server())
+def main_http() -> None:
+    """Entry point for HTTP mode only."""
+    settings = get_settings()
+    host = os.getenv('CERNGITLAB_HOST', 'localhost')
+    port = int(os.getenv('CERNGITLAB_PORT', '8000'))
+    asyncio.run(run_http_server(settings, host, port))
 
 
 if __name__ == "__main__":
