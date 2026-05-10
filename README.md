@@ -301,7 +301,7 @@ HTTP mode provides a centralized server for multiple users. It uses **CERN SSO +
 
 1. **CERN SSO client** — Register a client at the [CERN Authorization Service](https://auth.cern.ch). Note the client ID.
 2. **GitLab OAuth application** — Create one at `https://gitlab.cern.ch/-/profile/applications`.
-   - Set the redirect URI to `https://mcp-server.cern.ch/oauth/callback`
+   - Set the redirect URI to `https://gitlab.cern.ch/oauth/callback` (replace with actual URL)
    - Enable the `read_api read_repository read_user` scopes
    - Note the application ID and secret.
 
