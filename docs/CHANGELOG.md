@@ -2,6 +2,40 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.2.0] - 2026-05-10
+
+### Added
+- **CERN SSO OAuth Authentication**: HTTP mode now authenticates users via CERN Single Sign-On (SSO) + GitLab OAuth, replacing the demo environment-variable auth system
+  - `OAuthService`: Validates incoming CERN SSO JWT tokens against CERN's JWKS endpoint and orchestrates the GitLab OAuth authorization code flow
+  - `SessionStore`: File-backed, per-user OAuth token cache stored under `CERNGITLAB_SESSION_STORAGE_PATH` (default `/tmp/cerngitlab/sessions`)
+  - Automatic periodic cleanup of expired sessions (every hour)
+  - CERN SSO JWKS response cached for 1 hour to reduce external calls
+- **New HTTP API Endpoints**:
+  - `GET /oauth/authorize` — Begin or check the OAuth flow for a CERN SSO bearer token
+  - `GET /oauth/callback` — Receive the GitLab OAuth authorization code and store the resulting token
+  - `DELETE /session` — Revoke the current user's OAuth session
+  - `GET /admin/sessions` — List all active sessions (admin use)
+- **New Configuration Variables** (all prefixed `CERNGITLAB_`):
+  - `CERN_CLIENT_ID` — CERN SSO OAuth client ID
+  - `GITLAB_OAUTH_CLIENT_ID` — GitLab OAuth application client ID
+  - `GITLAB_OAUTH_CLIENT_SECRET` — GitLab OAuth application client secret
+  - `SERVER_BASE_URL` — Public base URL of this server (used for OAuth callback redirect)
+  - `SESSION_STORAGE_PATH` — Directory for persisting OAuth session files (default `/tmp/cerngitlab/sessions`)
+  - `HOST` — HTTP server bind address (default `0.0.0.0`)
+  - `PORT` — HTTP server bind port (default `8000`)
+- **New Dependencies**: `PyJWT>=2.8.0` and `aiofiles>=23.0.0`
+- **`examples/oauth_server.py`**: Reference startup script demonstrating environment variable configuration for CERN SSO mode
+
+### Changed
+- **HTTP Transport** (`transports/http.py`): Replaced the demo API-key auth system with full CERN SSO + GitLab OAuth. Users now authenticate with their real CERN SSO token; GitLab enforces all permissions natively.
+- **`McpRequest` / `McpResponse`**: Extracted from `transports/http.py` into a shared `models.py` module for reuse across transports.
+- **`exceptions.py`**: Added `AuthorizationRequiredError` to signal when a user needs to complete the GitLab OAuth flow.
+
+### Security
+- Session files are written with `0o600` permissions (owner-read-only).
+- OAuth `state` parameter is a signed, time-limited token (10-minute window) to prevent CSRF.
+- No GitLab tokens are ever returned in API responses or admin listings.
+
 ## [0.1.7] - 2026-04-01
 
 ### Added

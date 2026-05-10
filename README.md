@@ -14,7 +14,7 @@
 - **Dual-mode operation** — stdio (single-user) and HTTP (multi-user) modes
 - **CLI tool** (`cerngitlab-cli`) for direct command-line usage
 - **Public access** — works without authentication for public repositories
-- **Multi-user support** — HTTP mode enables centralized deployment for multiple users
+- **Multi-user HTTP mode** — CERN SSO + GitLab OAuth authentication for centralized deployments; GitLab enforces all access permissions natively
 - **HEP-focused** — dependency parsing for Python and C++ ecosystems, binary detection for `.root` files, issue search
 - **Robust** — rate limiting, retries with exponential backoff, graceful error handling
 
@@ -51,15 +51,20 @@ All settings are configured via environment variables prefixed with `CERNGITLAB_
 | Variable | Default | Description |
 |---|---|---|
 | `CERNGITLAB_GITLAB_URL` | `https://gitlab.cern.ch` | GitLab instance URL |
-| `CERNGITLAB_TOKEN` | *(empty)* | Personal access token (optional) |
+| `CERNGITLAB_TOKEN` | *(empty)* | Personal access token (optional, for stdio mode) |
 | `CERNGITLAB_TIMEOUT` | `30` | HTTP timeout in seconds |
 | `CERNGITLAB_MAX_RETRIES` | `3` | Max retries for failed requests |
 | `CERNGITLAB_RATE_LIMIT_PER_MINUTE` | `300` | API rate limit |
 | `CERNGITLAB_LOG_LEVEL` | `INFO` | Logging level |
-| `CERNGITLAB_DEFAULT_REF` | *(empty)* | Default Git branch or tag to search within (e.g., `main`, `master`, `v1.2.0`). Empty means search all branches. |
-| `CERNGITLAB_HTTP_MODE` | *(empty)* | Set to enable HTTP mode for multi-user deployment |
-| `CERNGITLAB_HOST` | `localhost` | HTTP mode: host to bind to |
-| `CERNGITLAB_PORT` | `8000` | HTTP mode: port to bind to |
+| `CERNGITLAB_DEFAULT_REF` | *(empty)* | Default Git branch or tag to search within. Empty means all branches. |
+| `CERNGITLAB_HTTP_MODE` | *(empty)* | Set any value to auto-detect HTTP mode |
+| `CERNGITLAB_HOST` | `0.0.0.0` | HTTP server bind address |
+| `CERNGITLAB_PORT` | `8000` | HTTP server bind port |
+| `CERNGITLAB_CERN_CLIENT_ID` | *(empty)* | **HTTP mode** — CERN SSO OAuth client ID |
+| `CERNGITLAB_GITLAB_OAUTH_CLIENT_ID` | *(empty)* | **HTTP mode** — GitLab OAuth application client ID |
+| `CERNGITLAB_GITLAB_OAUTH_CLIENT_SECRET` | *(empty)* | **HTTP mode** — GitLab OAuth application client secret |
+| `CERNGITLAB_SERVER_BASE_URL` | `http://localhost:8000` | **HTTP mode** — Public base URL (used for OAuth callback) |
+| `CERNGITLAB_SESSION_STORAGE_PATH` | `/tmp/cerngitlab/sessions` | **HTTP mode** — Directory for persisting OAuth session files |
 
 ### Authentication
 
@@ -290,49 +295,74 @@ See [docs/dev.md](docs/dev.md) for development setup, project structure, testing
 
 ## Multi-User HTTP Deployment
 
-For centralized deployments serving multiple users, use HTTP mode:
+HTTP mode provides a centralized server for multiple users. It uses **CERN SSO + GitLab OAuth** for authentication, users authenticate with their existing CERN identity, and GitLab's own permission system enforces all access controls.
+
+### Prerequisites
+
+1. **CERN SSO client** — Register a client at the [CERN Authorization Service](https://auth.cern.ch). Note the client ID.
+2. **GitLab OAuth application** — Create one at `https://gitlab.cern.ch/-/profile/applications`.
+   - Set the redirect URI to `https://gitlabmcp.cern.ch/oauth/callback` (replace with actual URL)
+   - Enable the `read_api read_repository read_user` scopes
+   - Note the application ID and secret.
 
 ### Setup
 
 ```bash
-# Start HTTP server
-cerngitlab-mcp --mode http --host 0.0.0.0 --port 8080
+export CERNGITLAB_CERN_CLIENT_ID=your-cern-sso-client-id
+export CERNGITLAB_GITLAB_OAUTH_CLIENT_ID=your-gitlab-oauth-app-id
+export CERNGITLAB_GITLAB_OAUTH_CLIENT_SECRET=your-gitlab-oauth-secret
+export CERNGITLAB_SERVER_BASE_URL=https://gitlabmcp.cern.ch
+export CERNGITLAB_SESSION_STORAGE_PATH=/var/lib/cerngitlab/sessions  # optional
 
-# Or with environment variables
-CERNGITLAB_HTTP_MODE=true CERNGITLAB_HOST=0.0.0.0 CERNGITLAB_PORT=8080 cerngitlab-mcp
+# Start the server
+cerngitlab-mcp --mode http --host 0.0.0.0 --port 8000
 ```
 
-### User Authentication
+See `examples/oauth_server.py` in the repository for a self-contained reference script.
 
-For demo purposes, users can be configured via environment variables:
+### Authentication Flow
 
-```bash
-# Set up demo users
-export CERNGITLAB_DEMO_USER_alice=glpat-alice-token
-export CERNGITLAB_DEMO_USER_bob=glpat-bob-token
-```
-
-Users authenticate with `Authorization: Bearer demo-alice` header.
+1. Client sends a request with `Authorization: Bearer <cern-sso-token>` header.
+2. Server validates the CERN SSO token via CERN's JWKS endpoint.
+3. If the user has no active GitLab OAuth session, the server returns HTTP 202 with a `authorization_url` field.
+4. The user visits that URL, authorizes the GitLab OAuth application, and is redirected back to `/oauth/callback`.
+5. Subsequent requests are served using the stored GitLab OAuth token. Sessions expire after 2 hours.
 
 ### API Endpoints
 
-- `GET /` - Server information
-- `GET /health` - Health check
-- `GET /tools` - List available tools (authenticated)
-- `POST /tools/{tool_name}` - Execute specific tool (authenticated)
-- `POST /mcp` - Generic MCP endpoint (authenticated)
+| Method | Path | Auth | Description |
+|---|---|---|---|
+| `GET` | `/` | — | Server information |
+| `GET` | `/health` | — | Health check |
+| `GET` | `/oauth/authorize` | CERN SSO | Start or check the OAuth authorization flow |
+| `GET` | `/oauth/callback` | — | Receive the GitLab OAuth code (browser redirect) |
+| `GET` | `/tools` | CERN SSO | List available MCP tools |
+| `POST` | `/tools/{tool_name}` | CERN SSO | Execute a specific tool |
+| `DELETE` | `/session` | CERN SSO | Revoke the current user's OAuth session |
+| `GET` | `/admin/sessions` | — | List all active sessions (admin use) |
 
 ### Example Usage
+Assuming the server is running at `https://gitlabmcp.cern.ch` and the `CERN_SSO_TOKEN` environment variable is set to a valid CERN SSO token:
 
 ```bash
-# List available tools
-curl -H "Authorization: Bearer demo-alice" http://localhost:8080/tools
+# Step 1 – check authorization status
+curl -H "Authorization: Bearer $CERN_SSO_TOKEN" \
+     https://gitlabmcp.cern.ch/oauth/authorize
+# If 202, visit the returned authorization_url in a browser and authorize.
 
-# Execute a tool
-curl -X POST -H "Authorization: Bearer demo-alice" \
+# Step 2 – list available tools (once authorized)
+curl -H "Authorization: Bearer $CERN_SSO_TOKEN" \
+     https://gitlabmcp.cern.ch/tools
+
+# Step 3 – execute a tool
+curl -X POST -H "Authorization: Bearer $CERN_SSO_TOKEN" \
      -H "Content-Type: application/json" \
      -d '{"arguments": {"query": "ROOT"}}' \
-     http://localhost:8080/tools/search_projects
+     https://gitlabmcp.cern.ch/tools/search_projects
+
+# Revoke session
+curl -X DELETE -H "Authorization: Bearer $CERN_SSO_TOKEN" \
+     https://gitlabmcp.cern.ch/session
 ```
 
 ## CLI Tool
@@ -373,4 +403,4 @@ This can be used by LLMs or agents to understand the available tools and how to 
 
 ## License
 
-AGPL-3.0
+This software is provided under the AGPL-3.0 license.
