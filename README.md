@@ -301,7 +301,7 @@ HTTP mode provides a centralized server for multiple users. It uses **CERN SSO +
 
 1. **CERN SSO client** — Register a client at the [CERN Authorization Service](https://auth.cern.ch). Note the client ID.
 2. **GitLab OAuth application** — Create one at `https://gitlab.cern.ch/-/profile/applications`.
-   - Set the redirect URI to `https://gitlab.cern.ch/oauth/callback` (replace with actual URL)
+   - Set the redirect URI to `https://gitlabmcp.cern.ch/oauth/callback` (replace with actual URL)
    - Enable the `read_api read_repository read_user` scopes
    - Note the application ID and secret.
 
@@ -311,7 +311,7 @@ HTTP mode provides a centralized server for multiple users. It uses **CERN SSO +
 export CERNGITLAB_CERN_CLIENT_ID=your-cern-sso-client-id
 export CERNGITLAB_GITLAB_OAUTH_CLIENT_ID=your-gitlab-oauth-app-id
 export CERNGITLAB_GITLAB_OAUTH_CLIENT_SECRET=your-gitlab-oauth-secret
-export CERNGITLAB_SERVER_BASE_URL=https://your-server.cern.ch
+export CERNGITLAB_SERVER_BASE_URL=https://gitlabmcp.cern.ch
 export CERNGITLAB_SESSION_STORAGE_PATH=/var/lib/cerngitlab/sessions  # optional
 
 # Start the server
@@ -342,26 +342,27 @@ See `examples/oauth_server.py` in the repository for a self-contained reference 
 | `GET` | `/admin/sessions` | — | List all active sessions (admin use) |
 
 ### Example Usage
+Assuming the server is running at `https://gitlabmcp.cern.ch` and the `CERN_SSO_TOKEN` environment variable is set to a valid CERN SSO token:
 
 ```bash
 # Step 1 – check authorization status
 curl -H "Authorization: Bearer $CERN_SSO_TOKEN" \
-     https://your-server.cern.ch/oauth/authorize
+     https://gitlabmcp.cern.ch/oauth/authorize
 # If 202, visit the returned authorization_url in a browser and authorize.
 
 # Step 2 – list available tools (once authorized)
 curl -H "Authorization: Bearer $CERN_SSO_TOKEN" \
-     https://your-server.cern.ch/tools
+     https://gitlabmcp.cern.ch/tools
 
 # Step 3 – execute a tool
 curl -X POST -H "Authorization: Bearer $CERN_SSO_TOKEN" \
      -H "Content-Type: application/json" \
      -d '{"arguments": {"query": "ROOT"}}' \
-     https://your-server.cern.ch/tools/search_projects
+     https://gitlabmcp.cern.ch/tools/search_projects
 
 # Revoke session
 curl -X DELETE -H "Authorization: Bearer $CERN_SSO_TOKEN" \
-     https://your-server.cern.ch/session
+     https://gitlabmcp.cern.ch/session
 ```
 
 ## CLI Tool
@@ -402,4 +403,4 @@ This can be used by LLMs or agents to understand the available tools and how to 
 
 ## License
 
-AGPL-3.0
+This software is provided under the AGPL-3.0 license.
