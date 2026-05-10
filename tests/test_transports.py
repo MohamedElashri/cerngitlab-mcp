@@ -1,6 +1,5 @@
 """Unit tests for transport layer classes."""
 
-import os
 import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -8,7 +7,7 @@ from cerngitlab_mcp.config import Settings
 from cerngitlab_mcp.core import McpServerCore
 from cerngitlab_mcp.gitlab_client import GitLabClient
 from cerngitlab_mcp.transports.stdio import StdioTransport
-from cerngitlab_mcp.transports.http import HttpTransport, UserSession, AuthService
+from cerngitlab_mcp.transports.http import UserSession
 
 
 class TestStdioTransport:
@@ -131,120 +130,3 @@ class TestUserSession:
         user_session.core.close = AsyncMock()
         await user_session.close()
         user_session.core.close.assert_called_once()
-
-
-class TestAuthService:
-    """Test cases for AuthService class."""
-
-    @pytest.fixture
-    def auth_service(self):
-        """Create AuthService instance for testing."""
-        return AuthService()
-
-    def test_initialization(self, auth_service):
-        """Test that AuthService initializes correctly."""
-        assert isinstance(auth_service.users, dict)
-
-    @patch.dict(os.environ, {"CERNGITLAB_DEMO_USER_alice": "glpat-alice-token"})
-    def test_load_demo_users(self):
-        """Test loading demo users from environment."""
-        auth_service = AuthService()
-
-        assert "demo-alice" in auth_service.users
-        user_id, gitlab_token = auth_service.users["demo-alice"]
-        assert user_id == "alice"
-        assert gitlab_token == "glpat-alice-token"
-
-    def test_authenticate_valid_user(self, auth_service):
-        """Test authentication with valid API key."""
-        auth_service.users["test-key"] = ("test_user", "test-token")
-
-        result = auth_service.authenticate("test-key")
-        assert result == ("test_user", "test-token")
-
-    def test_authenticate_invalid_user(self, auth_service):
-        """Test authentication with invalid API key."""
-        result = auth_service.authenticate("invalid-key")
-        assert result is None
-
-
-class TestHttpTransport:
-    """Test cases for HttpTransport class."""
-
-    @pytest.fixture
-    def settings(self):
-        """Create test settings."""
-        return Settings(
-            gitlab_url="https://gitlab.example.com",
-            timeout=5.0,
-            max_retries=1,
-        )
-
-    @pytest.fixture
-    def http_transport(self, settings):
-        """Create HttpTransport instance for testing."""
-        return HttpTransport(settings)
-
-    def test_initialization(self, http_transport, settings):
-        """Test that HttpTransport initializes correctly."""
-        assert http_transport.settings == settings
-        assert isinstance(http_transport.auth_service, AuthService)
-        assert isinstance(http_transport.user_sessions, dict)
-        assert http_transport.app is not None
-
-    @pytest.mark.asyncio
-    async def test_get_user_session_valid_auth(self, http_transport):
-        """Test getting user session with valid authentication."""
-        # Mock auth service
-        http_transport.auth_service.authenticate = MagicMock(
-            return_value=("test_user", "test-token")
-        )
-
-        session = await http_transport.get_user_session("valid-key")
-
-        assert isinstance(session, UserSession)
-        assert session.user_id == "test_user"
-        assert "test_user" in http_transport.user_sessions
-
-    @pytest.mark.asyncio
-    async def test_get_user_session_invalid_auth(self, http_transport):
-        """Test getting user session with invalid authentication."""
-        # Mock auth service
-        http_transport.auth_service.authenticate = MagicMock(return_value=None)
-
-        with pytest.raises(Exception):  # Should raise HTTPException
-            await http_transport.get_user_session("invalid-key")
-
-    @pytest.mark.asyncio
-    async def test_get_user_session_existing_session(self, http_transport):
-        """Test getting existing user session."""
-        # Mock auth service
-        http_transport.auth_service.authenticate = MagicMock(
-            return_value=("test_user", "test-token")
-        )
-
-        # Create first session
-        session1 = await http_transport.get_user_session("valid-key")
-
-        # Get same session again
-        session2 = await http_transport.get_user_session("valid-key")
-
-        assert session1 is session2
-
-    def test_create_app(self, http_transport):
-        """Test FastAPI app creation."""
-        app = http_transport._create_app()
-
-        assert app.title == "CERN GitLab MCP Server"
-        assert app.version == "0.1.7"
-
-    def test_setup_routes(self, http_transport):
-        """Test route setup."""
-        http_transport.setup_routes()
-
-        # Check that routes are registered
-        route_paths = [route.path for route in http_transport.app.routes]
-        expected_paths = ["/", "/health", "/tools", "/tools/{tool_name}", "/mcp"]
-
-        for expected_path in expected_paths:
-            assert any(expected_path in path for path in route_paths)

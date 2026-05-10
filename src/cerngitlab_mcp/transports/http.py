@@ -1,38 +1,25 @@
-"""HTTP transport for multi-user MCP server mode."""
+"""Simple HTTP transport with CERN SSO + OAuth authentication."""
 
 import asyncio
 import logging
-import os
-from typing import Dict, Optional
 from contextlib import asynccontextmanager
+from typing import Dict
 
 from fastapi import FastAPI, HTTPException, Header
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
+from fastapi.responses import HTMLResponse
 import uvicorn
 
-from cerngitlab_mcp.core import McpServerCore
-from cerngitlab_mcp.config import Settings
-from cerngitlab_mcp.gitlab_client import GitLabClient
-from cerngitlab_mcp.logging import setup_logging
+from ..config import Settings
+from ..core import McpServerCore
+from ..gitlab_client import GitLabClient
+from ..logging import setup_logging
+from ..models import McpRequest, McpResponse
+from ..auth.oauth import OAuthService
+from ..auth.session_store import SessionStore
+from ..exceptions import AuthenticationError, AuthorizationRequiredError
 
-
-logger = logging.getLogger("cerngitlab_mcp")
-
-
-class McpRequest(BaseModel):
-    """MCP tool call request model."""
-
-    name: str
-    arguments: dict = {}
-
-
-class McpResponse(BaseModel):
-    """MCP tool call response model."""
-
-    success: bool
-    data: Optional[dict] = None
-    error: Optional[str] = None
+logger = logging.getLogger(__name__)
 
 
 class UserSession:
@@ -43,7 +30,7 @@ class UserSession:
 
         Args:
             user_id: Unique user identifier
-            gitlab_token: User's GitLab personal access token
+            gitlab_token: User's GitLab OAuth token
             base_settings: Base server settings to inherit from
         """
         self.user_id = user_id
@@ -69,157 +56,188 @@ class UserSession:
         await self.core.close()
 
 
-class AuthService:
-    """Simple authentication service for demo purposes.
-
-    In production, this should be replaced with proper authentication
-    (OAuth, JWT, database-backed user management, etc.)
-    """
-
-    def __init__(self):
-        # Simple in-memory user store for demo
-        # Format: api_key -> (user_id, gitlab_token)
-        self.users: Dict[str, tuple[str, str]] = {}
-
-        # Load from environment for demo purposes
-        self._load_demo_users()
-
-    def _load_demo_users(self):
-        """Load demo users from environment variables."""
-        # Example: CERNGITLAB_DEMO_USER_alice=glpat-xxxx
-        for key, value in os.environ.items():
-            if key.startswith("CERNGITLAB_DEMO_USER_"):
-                user_id = key.replace("CERNGITLAB_DEMO_USER_", "")
-                api_key = f"demo-{user_id}"
-                gitlab_token = value
-                self.users[api_key] = (user_id, gitlab_token)
-                logger.info("Loaded demo user: %s", user_id)
-
-    def authenticate(self, api_key: str) -> Optional[tuple[str, str]]:
-        """Authenticate user by API key.
-
-        Args:
-            api_key: User's API key
-
-        Returns:
-            Tuple of (user_id, gitlab_token) if valid, None otherwise
-        """
-        return self.users.get(api_key)
-
-
 class HttpTransport:
-    """HTTP transport for multi-user MCP server mode."""
+    """Simple HTTP transport that relies on GitLab's permission system."""
 
     def __init__(self, settings: Settings):
-        """Initialize HTTP transport.
-
-        Args:
-            settings: Base server settings
-        """
         self.settings = settings
-        self.auth_service = AuthService()
+        self.oauth_service = OAuthService(settings)
+        self.session_store = SessionStore(settings)
         self.user_sessions: Dict[str, UserSession] = {}
+
+        # Link services
+        self.oauth_service.set_session_store(self.session_store)
+
         self.app = self._create_app()
 
     def _create_app(self) -> FastAPI:
-        """Create FastAPI application with all routes and middleware."""
+        """Create FastAPI application."""
 
         @asynccontextmanager
         async def lifespan(app: FastAPI):
-            """Application lifespan manager."""
             setup_logging(self.settings.log_level)
-            logger.info("Starting CERN GitLab MCP server (HTTP mode)")
+            logger.info("Starting CERN GitLab MCP server (CERN SSO mode)")
             logger.info("GitLab URL: %s", self.settings.gitlab_url)
+
+            # Start periodic cleanup task
+            cleanup_task = asyncio.create_task(self._periodic_cleanup())
+
             yield
-            # Cleanup all user sessions
+
+            # Cleanup
+            cleanup_task.cancel()
             for session in self.user_sessions.values():
                 await session.close()
             logger.info("HTTP server shutdown complete")
 
         app = FastAPI(
             title="CERN GitLab MCP Server",
-            description="Multi-user HTTP API for CERN GitLab MCP tools",
-            version="0.1.7",
+            description="CERN SSO-enabled multi-user HTTP API for GitLab MCP tools",
+            version="0.2.0",
             lifespan=lifespan,
         )
 
-        # Add CORS middleware
+        # CORS middleware
         app.add_middleware(
             CORSMiddleware,
             allow_origins=["*"],  # Configure appropriately for production
             allow_credentials=True,
-            allow_methods=["*"],
+            allow_methods=["GET", "POST", "DELETE"],
             allow_headers=["*"],
         )
 
+        self._setup_routes(app)
         return app
 
-    async def get_user_session(self, api_key: str) -> UserSession:
-        """Get or create user session.
+    def _setup_routes(self, app: FastAPI):
+        """Set up simple OAuth routes."""
 
-        Args:
-            api_key: User's API key
-
-        Returns:
-            User session instance
-
-        Raises:
-            HTTPException: If authentication fails
-        """
-        auth_result = self.auth_service.authenticate(api_key)
-        if not auth_result:
-            raise HTTPException(status_code=401, detail="Invalid API key")
-
-        user_id, gitlab_token = auth_result
-
-        # Get existing session or create new one
-        if user_id not in self.user_sessions:
-            self.user_sessions[user_id] = UserSession(
-                user_id, gitlab_token, self.settings
-            )
-            logger.info("Created new session for user: %s", user_id)
-
-        return self.user_sessions[user_id]
-
-    def setup_routes(self):
-        """Set up FastAPI routes."""
-
-        @self.app.get("/")
+        @app.get("/")
         async def root():
-            """Root endpoint with server information."""
             return {
                 "name": "CERN GitLab MCP Server",
-                "version": "0.1.7",
-                "mode": "http",
+                "version": "0.2.0",
+                "auth_mode": "cern_sso_oauth",
                 "gitlab_url": self.settings.gitlab_url,
+                "description": "Uses your existing GitLab permissions",
             }
 
-        @self.app.get("/health")
+        @app.get("/health")
         async def health():
-            """Health check endpoint."""
-            return {"status": "healthy", "mode": "http"}
+            return {"status": "healthy", "auth_mode": "cern_sso_oauth"}
 
-        @self.app.get("/tools")
-        async def list_tools(
-            authorization: str = Header(..., description="Bearer <api_key>"),
-        ):
-            """List available MCP tools for authenticated user."""
-            api_key = authorization.replace("Bearer ", "")
-            session = await self.get_user_session(api_key)
+        @app.get("/oauth/authorize")
+        async def start_oauth_flow(authorization: str = Header(...)):
+            """Start OAuth authorization flow."""
+            cern_token = self._extract_token(authorization)
+
+            try:
+                # This will raise AuthorizationRequiredError if needed
+                await self.oauth_service.authenticate_user(cern_token)
+                return {"status": "already_authorized"}
+
+            except AuthorizationRequiredError as e:
+                return {
+                    "authorization_required": True,
+                    "username": e.username,
+                    "authorization_url": e.authorization_url,
+                    "message": "Please authorize GitLab access",
+                }
+            except AuthenticationError:
+                raise HTTPException(status_code=401, detail="Invalid CERN SSO token")
+
+        @app.get("/oauth/callback")
+        async def oauth_callback(code: str, state: str):
+            """Handle OAuth callback."""
+            try:
+                username, oauth_token = await self.oauth_service.exchange_oauth_code(
+                    code, state
+                )
+                await self.session_store.store_session(username, oauth_token)
+
+                return HTMLResponse("""
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>Authorization Successful</title>
+                    <style>
+                        body {
+                            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                            text-align: center; margin: 50px; background: #f5f5f5;
+                        }
+                        .container {
+                            background: white; padding: 40px; border-radius: 8px;
+                            box-shadow: 0 2px 10px rgba(0,0,0,0.1); max-width: 500px;
+                            margin: 0 auto;
+                        }
+                        .success { color: #28a745; font-size: 24px; margin-bottom: 20px; }
+                        .info { color: #666; line-height: 1.6; }
+                    </style>
+                </head>
+                <body>
+                    <div class="container">
+                        <h2 class="success">✓ Authorization Successful!</h2>
+                        <p class="info">You can now access GitLab through the MCP server with your existing permissions.</p>
+                        <p class="info">You can close this window and return to using the MCP server.</p>
+                    </div>
+                    <script>
+                        setTimeout(() => window.close(), 3000);
+                    </script>
+                </body>
+                </html>
+                """)
+
+            except Exception as e:
+                logger.error(f"OAuth callback error: {e}")
+                return HTMLResponse(
+                    f"""
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>Authorization Failed</title>
+                    <style>
+                        body {{
+                            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                            text-align: center; margin: 50px; background: #f5f5f5;
+                        }}
+                        .container {{
+                            background: white; padding: 40px; border-radius: 8px;
+                            box-shadow: 0 2px 10px rgba(0,0,0,0.1); max-width: 500px;
+                            margin: 0 auto;
+                        }}
+                        .error {{ color: #dc3545; font-size: 24px; margin-bottom: 20px; }}
+                        .info {{ color: #666; line-height: 1.6; }}
+                    </style>
+                </head>
+                <body>
+                    <div class="container">
+                        <h2 class="error">✗ Authorization Failed</h2>
+                        <p class="info">Error: {str(e)}</p>
+                        <p class="info">Please try again or contact support.</p>
+                    </div>
+                </body>
+                </html>
+                """,
+                    status_code=400,
+                )
+
+        @app.get("/tools")
+        async def list_tools(authorization: str = Header(...)):
+            """List available tools."""
+            session = await self._get_user_session(authorization)
             tools = session.core.get_tool_definitions()
             return {"tools": [tool.model_dump() for tool in tools]}
 
-        @self.app.post("/tools/{tool_name}", response_model=McpResponse)
+        @app.post("/tools/{tool_name}")
         async def call_tool(
             tool_name: str,
             request: McpRequest,
-            authorization: str = Header(..., description="Bearer <api_key>"),
+            authorization: str = Header(...),
         ):
-            """Execute an MCP tool for authenticated user."""
-            api_key = authorization.replace("Bearer ", "")
-            session = await self.get_user_session(api_key)
+            """Execute tool - GitLab will handle permission checks."""
+            session = await self._get_user_session(authorization)
 
-            # Execute tool through core
+            # No additional access control - let GitLab handle it
             result = await session.core.handle_tool_call(tool_name, request.arguments)
 
             return McpResponse(
@@ -228,34 +246,90 @@ class HttpTransport:
                 error=result.get("error"),
             )
 
-        @self.app.post("/mcp", response_model=McpResponse)
-        async def mcp_endpoint(
-            request: McpRequest,
-            authorization: str = Header(..., description="Bearer <api_key>"),
-        ):
-            """Generic MCP endpoint (alternative to /tools/{tool_name})."""
-            api_key = authorization.replace("Bearer ", "")
-            session = await self.get_user_session(api_key)
+        @app.delete("/session")
+        async def revoke_session(authorization: str = Header(...)):
+            """Revoke user session."""
+            cern_token = self._extract_token(authorization)
 
-            result = await session.core.handle_tool_call(
-                request.name, request.arguments
+            try:
+                user_info = await self.oauth_service._validate_cern_token(cern_token)
+                if not user_info:
+                    raise HTTPException(status_code=401, detail="Invalid CERN token")
+
+                username = user_info["preferred_username"]
+                await self.session_store.revoke_session(username)
+
+                # Remove from active sessions
+                if username in self.user_sessions:
+                    await self.user_sessions[username].close()
+                    del self.user_sessions[username]
+
+                return {"status": "session_revoked", "username": username}
+
+            except Exception:
+                raise HTTPException(status_code=401, detail="Invalid CERN token")
+
+        @app.get("/admin/sessions")
+        async def list_active_sessions():
+            """Admin endpoint to list active sessions."""
+            sessions = await self.session_store.list_active_sessions()
+            return {"sessions": sessions, "count": len(sessions)}
+
+    async def _get_user_session(self, authorization: str) -> UserSession:
+        """Get user session with simple OAuth."""
+        cern_token = self._extract_token(authorization)
+
+        try:
+            username, oauth_token = await self.oauth_service.authenticate_user(
+                cern_token
             )
 
-            return McpResponse(
-                success=result["success"],
-                data=result.get("data"),
-                error=result.get("error"),
+            # Store session
+            await self.session_store.store_session(username, oauth_token)
+
+            # Get or create user session
+            if username not in self.user_sessions:
+                self.user_sessions[username] = UserSession(
+                    username, oauth_token, self.settings
+                )
+                logger.info(f"Created session for user: {username}")
+
+            return self.user_sessions[username]
+
+        except AuthorizationRequiredError as e:
+            raise HTTPException(
+                status_code=202,
+                detail={
+                    "error": "authorization_required",
+                    "username": e.username,
+                    "authorization_url": e.authorization_url,
+                    "message": "GitLab authorization required",
+                },
             )
+        except AuthenticationError:
+            raise HTTPException(status_code=401, detail="Authentication failed")
 
-    async def run(self, host: str = "localhost", port: int = 8000):
-        """Run the HTTP server.
+    def _extract_token(self, authorization: str) -> str:
+        """Extract token from Authorization header."""
+        if not authorization.startswith("Bearer "):
+            raise HTTPException(status_code=401, detail="Invalid authorization header")
+        return authorization[7:]
 
-        Args:
-            host: Host to bind to
-            port: Port to bind to
-        """
-        self.setup_routes()
+    async def _periodic_cleanup(self):
+        """Periodic cleanup of expired sessions."""
+        import asyncio
 
+        while True:
+            try:
+                await asyncio.sleep(3600)  # Run every hour
+                await self.session_store.cleanup_expired_sessions()
+            except asyncio.CancelledError:
+                break
+            except Exception as e:
+                logger.error(f"Error during periodic cleanup: {e}")
+
+    async def run(self, host: str = "0.0.0.0", port: int = 8000):
+        """Run the HTTP server."""
         config = uvicorn.Config(
             app=self.app,
             host=host,

@@ -35,6 +35,17 @@ class RateLimitError(CERNGitLabError):
         super().__init__(msg, status_code=429)
 
 
+class AuthorizationRequiredError(CERNGitLabError):
+    """Raised when user needs to authorize GitLab access."""
+
+    def __init__(self, username: str, authorization_url: str) -> None:
+        self.username = username
+        self.authorization_url = authorization_url
+        super().__init__(
+            f"GitLab authorization required for user: {username}", status_code=202
+        )
+
+
 class GitLabAPIError(CERNGitLabError):
     """Raised for unexpected GitLab API errors."""
 
