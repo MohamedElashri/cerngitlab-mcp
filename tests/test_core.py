@@ -49,7 +49,7 @@ class TestMcpServerCore:
         tools = core.get_tool_definitions()
 
         # Should have at least the test_connectivity tool plus all the imported tools
-        assert len(tools) >= 14  # test_connectivity + 13 imported tools
+        assert len(tools) >= 15  # test_connectivity + 14 imported tools
 
         tool_names = [tool.name for tool in tools]
         expected_tools = [
@@ -64,6 +64,7 @@ class TestMcpServerCore:
             "search_issues",
             "get_wiki_pages",
             "inspect_project",
+            "list_branches",
             "list_releases",
             "get_release",
             "list_tags",

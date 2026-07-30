@@ -1,6 +1,6 @@
 # CERN GitLab CLI
 
-A command-line interface for interacting with CERN GitLab repositories. This cli provides 14 tools for searching, browsing, and analyzing HEP (High Energy Physics) code, documentation, and examples from CERN GitLab.
+A command-line interface for interacting with CERN GitLab repositories. This cli provides 15 tools for searching, browsing, and analyzing HEP (High Energy Physics) code, documentation, and examples from CERN GitLab.
 
 ## Overview
 
@@ -579,7 +579,30 @@ cerngitlab-cli list-tags --project lhcb/DaVinci --search v1
 
 ---
 
-### 14. `test-connection`
+### 14. `list-branches`
+
+List or search repository branches. Use a returned branch name with `--ref` on
+`list-files`, `get-file`, `get-readme`, `search-code`, or `inspect-project`.
+
+#### Input Parameters
+
+| Parameter | Type | Required | Default | Description |
+|-----------|------|----------|---------|-------------|
+| `--project` | string | Yes | - | Project ID or path |
+| `--search` | string | No | - | Filter branches by name |
+| `--page` | integer | No | `1` | Page number |
+| `--per-page` | integer | No | `20` | Results count |
+
+#### Example Usage
+
+```bash
+cerngitlab-cli list-branches --project lhcb/DaVinci --search release
+cerngitlab-cli search-code --project lhcb/DaVinci --ref release/v2 --search-term Scheduler
+```
+
+---
+
+### 15. `test-connection`
 
 Test connectivity to the CERN GitLab instance.
 

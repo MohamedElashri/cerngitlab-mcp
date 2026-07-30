@@ -5,7 +5,7 @@ description: "Search, browse, and analyze CERN GitLab repositories for HEP code,
 
 # CERN GitLab CLI
 
-A command-line interface for interacting with CERN GitLab (`gitlab.cern.ch`). Provides 14 tools for searching, browsing, and analyzing HEP code repositories.
+A command-line interface for interacting with CERN GitLab (`gitlab.cern.ch`). Provides 15 tools for searching, browsing, and analyzing HEP code repositories.
 
 The CLI binary is `cerngitlab-cli`. All commands return structured JSON. Public repositories work without authentication; private/internal repos and code search require a token.
 
@@ -76,6 +76,7 @@ With a token:
 |------|------|:---:|
 | Find repos by keyword/topic/language | `search-projects` | No |
 | Get project metadata & stats | `get-project-info` | No |
+| List or search branches | `list-branches` | No |
 | Browse directory tree | `list-files` | No |
 | Read a specific file | `get-file` | No |
 | Read README (auto-detected) | `get-readme` | No |
@@ -110,6 +111,14 @@ cerngitlab-cli search-projects --topic lhcb --per-page 50
 cerngitlab-cli get-readme --project lhcb/DaVinci
 cerngitlab-cli list-files --project lhcb/DaVinci --path src/
 cerngitlab-cli inspect-project --project lhcb/DaVinci
+```
+
+### Work on a non-default branch
+
+```bash
+cerngitlab-cli list-branches --project lhcb/DaVinci --search release
+cerngitlab-cli list-files --project lhcb/DaVinci --ref release/v2
+cerngitlab-cli search-code --project lhcb/DaVinci --ref release/v2 --search-term Scheduler
 ```
 
 `inspect-project` is the most powerful single command — it analyzes build systems, dependencies, CI/CD config, and language breakdown in one call.
@@ -517,7 +526,29 @@ List project tags with optional filtering.
 
 ---
 
-### 14. test-connection
+### 14. list-branches
+
+List or search repository branches. A returned branch name can be passed to the
+`--ref` option of repository content, code search, and inspection commands.
+
+**Parameters:**
+
+| Parameter | Type | Required | Default | Description |
+|-----------|------|----------|---------|-------------|
+| `--project` | string | Yes | - | Project ID or path |
+| `--search` | string | No | - | Filter branches by name |
+| `--page` | integer | No | `1` | Page number |
+| `--per-page` | integer | No | `20` | Results count |
+
+**Example:**
+
+```bash
+cerngitlab-cli list-branches --project lhcb/DaVinci --search release
+```
+
+---
+
+### 15. test-connection
 
 Test connectivity to the CERN GitLab instance. Takes no parameters.
 

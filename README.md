@@ -10,7 +10,7 @@
 
 ## Features
 
-- **14 MCP tools** for searching, browsing, and analyzing CERN GitLab repositories
+- **15 MCP tools** for searching, browsing, and analyzing CERN GitLab repositories
 - **Dual-mode operation** — stdio (single-user) and HTTP (multi-user) modes
 - **CLI tool** (`cerngitlab-cli`) for direct command-line usage
 - **Public access** — works without authentication for public repositories
@@ -56,7 +56,7 @@ All settings are configured via environment variables prefixed with `CERNGITLAB_
 | `CERNGITLAB_MAX_RETRIES` | `3` | Max retries for failed requests |
 | `CERNGITLAB_RATE_LIMIT_PER_MINUTE` | `300` | API rate limit |
 | `CERNGITLAB_LOG_LEVEL` | `INFO` | Logging level |
-| `CERNGITLAB_DEFAULT_REF` | *(empty)* | Default Git branch or tag to search within. Empty means all branches. |
+| `CERNGITLAB_DEFAULT_REF` | *(empty)* | Default Git branch or tag for code search. Empty uses GitLab's default ref behavior. |
 | `CERNGITLAB_HTTP_MODE` | *(empty)* | Set any value to auto-detect HTTP mode |
 | `CERNGITLAB_HOST` | `0.0.0.0` | HTTP server bind address |
 | `CERNGITLAB_PORT` | `8000` | HTTP server bind port |
@@ -248,6 +248,7 @@ The server automatically detects HTTP mode if `CERNGITLAB_HTTP_MODE`, `CERNGITLA
 |---|---|---|
 | `search_projects` | Search for public CERN GitLab projects (repositories) by keyword, topic, or language | No |
 | `get_project_info` | Get detailed project metadata (stars, description, languages, statistics) | No |
+| `list_branches` | List or search project branches and their commit metadata | No |
 | `list_project_files` | List files and directories in a project's repository | No |
 | `get_file_content` | Fetch the content of a specific file (includes binary detection) | No |
 | `get_project_readme` | Get the README content for a project | No |
@@ -270,6 +271,9 @@ For detailed parameter documentation, see [docs/dev.md](docs/dev.md).
 
 ### Understand a project
 > "Get the README and file structure of the lhcb/DaVinci project on CERN GitLab"
+
+### Explore a branch
+> "Find branches containing 'release' in lhcb/DaVinci, then search the selected branch for Scheduler configuration"
 
 ### Find fitting examples
 > "Search for repositories on CERN GitLab that use RooFit and show me example fitting code"
@@ -394,7 +398,7 @@ All commands output JSON to stdout for easy piping and composition. See `cerngit
 ## Skill File
 
 A detailed skill file ([`SKILL.md`](SKILL.md)) is available with:
-- Complete documentation of all 14 tools
+- Complete documentation of all 15 tools
 - Input/output specifications
 - Usage examples
 - Authentication requirements

@@ -17,6 +17,7 @@ from cerngitlab_mcp.tools import (
     get_project_readme,
     get_wiki_pages,
     inspect_project,
+    list_branches,
     list_releases,
     list_project_files,
     list_tags,
@@ -421,6 +422,40 @@ def inspect_project_cmd(project: str, ref: str) -> None:
         try:
             arguments = {"project": project, "ref": ref}
             result = await inspect_project.handle(client, arguments)
+            _output_json(result)
+        except CERNGitLabError as exc:
+            _output_error(exc.message)
+        finally:
+            await client.close()
+
+    _run_async(_run())
+
+
+# ---------------------------------------------------------------------------
+# list-branches
+# ---------------------------------------------------------------------------
+
+
+@click.command("list-branches")
+@click.option("--project", "-p", required=True, help="Project ID or path")
+@click.option("--search", default="", help="Filter branches by name")
+@click.option("--page", default=1, type=click.IntRange(1), help="Page number")
+@click.option(
+    "--per-page", default=20, type=click.IntRange(1, 100), help="Results count"
+)
+def list_branches_cmd(project: str, search: str, page: int, per_page: int) -> None:
+    """List or search project branches."""
+
+    async def _run():
+        client = _create_client()
+        try:
+            arguments = {
+                "project": project,
+                "search": search,
+                "page": page,
+                "per_page": per_page,
+            }
+            result = await list_branches.handle(client, arguments)
             _output_json(result)
         except CERNGitLabError as exc:
             _output_error(exc.message)

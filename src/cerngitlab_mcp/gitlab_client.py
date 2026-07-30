@@ -7,6 +7,7 @@ from typing import Any
 
 import httpx
 
+from cerngitlab_mcp import __version__
 from cerngitlab_mcp.config import Settings
 from cerngitlab_mcp.exceptions import (
     AuthenticationError,
@@ -65,7 +66,7 @@ class GitLabClient:
         """Build HTTP headers, including auth token if available."""
         headers = {
             "Accept": "application/json",
-            "User-Agent": "cerngitlab-mcp/0.1.0",
+            "User-Agent": f"cerngitlab-mcp/{__version__}",
         }
         if self.settings.token:
             headers["PRIVATE-TOKEN"] = self.settings.token

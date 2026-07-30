@@ -756,6 +756,47 @@ class TestInspectProject:
 
 
 # ---------------------------------------------------------------------------
+# Test: list-branches
+# ---------------------------------------------------------------------------
+
+
+class TestListBranches:
+    def test_list_branches_with_filter(self, cli_runner, httpx_mock):
+        httpx_mock.add_response(
+            url=httpx.URL(
+                "https://gitlab.example.com/api/v4/projects/test%2Fproj/repository/branches",
+                params={"page": "1", "per_page": "10", "search": "feature"},
+            ),
+            json=[
+                {
+                    "name": "feature/branch-support",
+                    "default": False,
+                    "commit": {"short_id": "abc123"},
+                }
+            ],
+        )
+
+        result = cli_runner.invoke(
+            cli,
+            [
+                "list-branches",
+                "--project",
+                "test/proj",
+                "--search",
+                "feature",
+                "--per-page",
+                "10",
+            ],
+            env={"CERNGITLAB_GITLAB_URL": "https://gitlab.example.com"},
+        )
+
+        assert result.exit_code == 0
+        data = json.loads(result.output)
+        assert data["total_branches"] == 1
+        assert data["branches"][0]["name"] == "feature/branch-support"
+
+
+# ---------------------------------------------------------------------------
 # Test: list-releases
 # ---------------------------------------------------------------------------
 
@@ -888,12 +929,13 @@ class TestCLIHelp:
         assert "CERN GitLab CLI" in result.output
         assert "search-projects" in result.output
         assert "get-project-info" in result.output
+        assert "list-branches" in result.output
 
     def test_cli_version(self, cli_runner):
         """Test CLI version flag."""
         result = cli_runner.invoke(cli, ["--version"])
         assert result.exit_code == 0
-        assert "0.1.7" in result.output
+        assert "0.2.0" in result.output
 
     def test_command_help(self, cli_runner):
         """Test individual command help."""
