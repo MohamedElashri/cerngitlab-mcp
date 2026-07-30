@@ -1,5 +1,5 @@
 {
-  "version": 1,
+  "version": 2,
   "generated_by": "sanad",
   "entries": [
     {
@@ -9,10 +9,10 @@
       "repo": "checkout",
       "path": "",
       "kind": "github-action",
-      "logical_ref": "v6",
-      "pinned_sha": "de0fac2e4500dabe0009e67214ff5f5447ce83dd",
-      "resolved_at": "2026-05-19T13:04:16Z",
-      "timestamp": "2026-01-09T19:42:23Z",
+      "logical_ref": "v7",
+      "pinned_sha": "3d3c42e5aac5ba805825da76410c181273ba90b1",
+      "resolved_at": "2026-07-30T08:15:41Z",
+      "timestamp": "2026-07-17T18:45:11Z",
       "timestamp_source": "commit"
     },
     {
@@ -22,10 +22,10 @@
       "repo": "setup-uv",
       "path": "",
       "kind": "github-action",
-      "logical_ref": "v6",
-      "pinned_sha": "d0cc045d04ccac9d8b7881df0226f9e82c39688e",
-      "resolved_at": "2026-05-19T13:04:16Z",
-      "timestamp": "2025-09-30T15:07:27Z",
+      "logical_ref": "v7",
+      "pinned_sha": "37802adc94f370d6bfd71619e3f0bf239e1f3b78",
+      "resolved_at": "2026-07-30T08:15:41Z",
+      "timestamp": "2026-03-16T15:36:24Z",
       "timestamp_source": "tag"
     },
     {
@@ -35,10 +35,10 @@
       "repo": "checkout",
       "path": "",
       "kind": "github-action",
-      "logical_ref": "v6",
-      "pinned_sha": "de0fac2e4500dabe0009e67214ff5f5447ce83dd",
-      "resolved_at": "2026-05-19T13:04:16Z",
-      "timestamp": "2026-01-09T19:42:23Z",
+      "logical_ref": "v7",
+      "pinned_sha": "3d3c42e5aac5ba805825da76410c181273ba90b1",
+      "resolved_at": "2026-07-30T08:15:41Z",
+      "timestamp": "2026-07-17T18:45:11Z",
       "timestamp_source": "commit"
     },
     {
@@ -48,10 +48,10 @@
       "repo": "setup-uv",
       "path": "",
       "kind": "github-action",
-      "logical_ref": "v6",
-      "pinned_sha": "d0cc045d04ccac9d8b7881df0226f9e82c39688e",
-      "resolved_at": "2026-05-19T13:04:16Z",
-      "timestamp": "2025-09-30T15:07:27Z",
+      "logical_ref": "v7",
+      "pinned_sha": "37802adc94f370d6bfd71619e3f0bf239e1f3b78",
+      "resolved_at": "2026-07-30T08:15:41Z",
+      "timestamp": "2026-03-16T15:36:24Z",
       "timestamp_source": "tag"
     },
     {
@@ -61,10 +61,10 @@
       "repo": "checkout",
       "path": "",
       "kind": "github-action",
-      "logical_ref": "v6",
-      "pinned_sha": "de0fac2e4500dabe0009e67214ff5f5447ce83dd",
-      "resolved_at": "2026-05-19T13:04:16Z",
-      "timestamp": "2026-01-09T19:42:23Z",
+      "logical_ref": "v7",
+      "pinned_sha": "3d3c42e5aac5ba805825da76410c181273ba90b1",
+      "resolved_at": "2026-07-30T08:15:41Z",
+      "timestamp": "2026-07-17T18:45:11Z",
       "timestamp_source": "commit"
     },
     {
@@ -74,10 +74,10 @@
       "repo": "setup-uv",
       "path": "",
       "kind": "github-action",
-      "logical_ref": "v6",
-      "pinned_sha": "d0cc045d04ccac9d8b7881df0226f9e82c39688e",
-      "resolved_at": "2026-05-19T13:04:16Z",
-      "timestamp": "2025-09-30T15:07:27Z",
+      "logical_ref": "v7",
+      "pinned_sha": "37802adc94f370d6bfd71619e3f0bf239e1f3b78",
+      "resolved_at": "2026-07-30T08:15:41Z",
+      "timestamp": "2026-03-16T15:36:24Z",
       "timestamp_source": "tag"
     },
     {
@@ -87,10 +87,10 @@
       "repo": "upload-artifact",
       "path": "",
       "kind": "github-action",
-      "logical_ref": "v6",
-      "pinned_sha": "b7c566a772e6b6bfb58ed0dc250532a479d7789f",
-      "resolved_at": "2026-05-19T13:04:16Z",
-      "timestamp": "2025-12-12T17:58:04Z",
+      "logical_ref": "v7",
+      "pinned_sha": "043fb46d1a93c77aae656e7c1c64a875d1fc6a0a",
+      "resolved_at": "2026-07-30T08:15:41Z",
+      "timestamp": "2026-04-10T16:08:32Z",
       "timestamp_source": "commit"
     },
     {
@@ -100,10 +100,10 @@
       "repo": "checkout",
       "path": "",
       "kind": "github-action",
-      "logical_ref": "v6",
-      "pinned_sha": "de0fac2e4500dabe0009e67214ff5f5447ce83dd",
-      "resolved_at": "2026-05-19T13:04:16Z",
-      "timestamp": "2026-01-09T19:42:23Z",
+      "logical_ref": "v7",
+      "pinned_sha": "3d3c42e5aac5ba805825da76410c181273ba90b1",
+      "resolved_at": "2026-07-30T08:15:41Z",
+      "timestamp": "2026-07-17T18:45:11Z",
       "timestamp_source": "commit"
     },
     {
@@ -113,11 +113,11 @@
       "repo": "action-gh-release",
       "path": "",
       "kind": "github-action",
-      "logical_ref": "v2",
-      "pinned_sha": "3bb12739c298aeb8a4eeaf626c5b8d85266b0e65",
-      "resolved_at": "2026-05-19T13:04:16Z",
-      "timestamp": "2026-04-12T03:31:51Z",
-      "timestamp_source": "commit"
+      "logical_ref": "v3",
+      "pinned_sha": "3d0d9888cb7fd7b750713d6e236d1fcb99157228",
+      "resolved_at": "2026-07-30T08:15:41Z",
+      "timestamp": "2026-07-13T14:28:57Z",
+      "timestamp_source": "tag"
     },
     {
       "file": ".github/workflows/release.yml",
@@ -126,10 +126,10 @@
       "repo": "download-artifact",
       "path": "",
       "kind": "github-action",
-      "logical_ref": "v7",
-      "pinned_sha": "37930b1c2abaa49bbe596cd826c3c89aef350131",
-      "resolved_at": "2026-05-19T13:04:16Z",
-      "timestamp": "2025-12-12T17:58:13Z",
+      "logical_ref": "v8",
+      "pinned_sha": "3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c",
+      "resolved_at": "2026-07-30T08:15:41Z",
+      "timestamp": "2026-03-11T15:35:54Z",
       "timestamp_source": "commit"
     },
     {
@@ -141,8 +141,8 @@
       "kind": "github-action",
       "logical_ref": "release/v1",
       "pinned_sha": "cef221092ed1bacb1cc03d23a2d87d1d172e277b",
-      "resolved_at": "2026-05-19T13:04:16Z",
-      "timestamp": "2026-02-18T00:13:16Z",
+      "resolved_at": "2026-07-30T08:15:41Z",
+      "timestamp": "2026-07-28T18:38:00Z",
       "timestamp_source": "commit"
     },
     {
@@ -152,10 +152,10 @@
       "repo": "checkout",
       "path": "",
       "kind": "github-action",
-      "logical_ref": "v6",
-      "pinned_sha": "de0fac2e4500dabe0009e67214ff5f5447ce83dd",
-      "resolved_at": "2026-05-19T13:04:16Z",
-      "timestamp": "2026-01-09T19:42:23Z",
+      "logical_ref": "v7",
+      "pinned_sha": "3d3c42e5aac5ba805825da76410c181273ba90b1",
+      "resolved_at": "2026-07-30T08:15:41Z",
+      "timestamp": "2026-07-17T18:45:11Z",
       "timestamp_source": "commit"
     },
     {
@@ -165,10 +165,10 @@
       "repo": "setup-uv",
       "path": "",
       "kind": "github-action",
-      "logical_ref": "v6",
-      "pinned_sha": "d0cc045d04ccac9d8b7881df0226f9e82c39688e",
-      "resolved_at": "2026-05-19T13:04:16Z",
-      "timestamp": "2025-09-30T15:07:27Z",
+      "logical_ref": "v7",
+      "pinned_sha": "37802adc94f370d6bfd71619e3f0bf239e1f3b78",
+      "resolved_at": "2026-07-30T08:15:41Z",
+      "timestamp": "2026-03-16T15:36:24Z",
       "timestamp_source": "tag"
     }
   ]
