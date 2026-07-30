@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## [0.2.0] - 2026-05-10
+## [0.2.0] - 2026-07-30
 
 ### Added
 - **Branch Discovery**: Added the `list_branches` MCP tool and `list-branches`
