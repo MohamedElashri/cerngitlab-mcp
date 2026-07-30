@@ -4,6 +4,7 @@ import asyncio
 
 import click
 
+from cerngitlab_mcp import __version__
 from cerngitlab_mcp.cli.commands import (
     search_projects_cmd,
     get_project_info_cmd,
@@ -15,6 +16,7 @@ from cerngitlab_mcp.cli.commands import (
     search_issues_cmd,
     get_wiki_cmd,
     inspect_project_cmd,
+    list_branches_cmd,
     list_releases_cmd,
     get_release_cmd,
     list_tags_cmd,
@@ -23,7 +25,7 @@ from cerngitlab_mcp.cli.commands import (
 
 
 @click.group()
-@click.version_option(version="0.1.7", prog_name="cerngitlab-cli")
+@click.version_option(version=__version__, prog_name="cerngitlab-cli")
 def cli() -> None:
     """CERN GitLab CLI - Tools for discovering and analyzing HEP code repositories.
 
@@ -56,6 +58,7 @@ cli.add_command(search_lhcb_stack_cmd)
 cli.add_command(search_issues_cmd)
 cli.add_command(get_wiki_cmd)
 cli.add_command(inspect_project_cmd)
+cli.add_command(list_branches_cmd)
 cli.add_command(list_releases_cmd)
 cli.add_command(get_release_cmd)
 cli.add_command(list_tags_cmd)

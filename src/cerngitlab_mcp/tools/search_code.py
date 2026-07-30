@@ -53,7 +53,7 @@ TOOL_DEFINITION = Tool(
                 "description": (
                     "Optional: Git branch or tag to search within. "
                     "If omitted, uses the default_ref from configuration "
-                    "(or searches all branches if not configured)."
+                    "(or GitLab's default branch behavior if not configured)."
                 ),
             },
             "per_page": {
@@ -175,6 +175,7 @@ async def _process_fallback_file(
     encoded_project: str,
     file_path: str,
     search_term: str,
+    ref: str,
     pattern: re.Pattern,
     semaphore: asyncio.Semaphore,
 ) -> dict[str, Any] | None:
@@ -184,7 +185,7 @@ async def _process_fallback_file(
         try:
             data = await client.get(
                 f"/projects/{encoded_project}/repository/files/{encoded_path}",
-                params={"ref": "HEAD"},
+                params={"ref": ref or "HEAD"},
             )
         except (NotFoundError, GitLabAPIError):
             return None
@@ -212,7 +213,7 @@ async def _process_fallback_file(
                 "file_path": file_path,
                 "project_id": None,
                 "data": snippet,
-                "ref": data.get("ref", "HEAD"),
+                "ref": data.get("ref", ref or "HEAD"),
                 "startline": start,
             }
 
@@ -226,6 +227,7 @@ async def _fallback_project_search(
     per_page: int,
     page: int,
     project_display: str,
+    ref: str,
 ) -> dict[str, Any]:
     """Search within a project by listing files and grepping content.
 
@@ -234,15 +236,19 @@ async def _fallback_project_search(
     """
     # Get the recursive file tree (limit to 200 files to avoid huge repos)
     try:
+        tree_params: dict[str, Any] = {"recursive": "true", "per_page": 200}
+        if ref:
+            tree_params["ref"] = ref
         tree = await client.get(
             f"/projects/{encoded_project}/repository/tree",
-            params={"recursive": "true", "per_page": 200},
+            params=tree_params,
         )
     except Exception:
         return {
             "search_term": search_term,
             "scope": "blobs",
             "project": project_display,
+            "ref": ref or "(default branch)",
             "total_results": 0,
             "results": [],
             "error": "Could not list repository files for fallback search.",
@@ -266,7 +272,7 @@ async def _fallback_project_search(
 
     tasks = [
         _process_fallback_file(
-            client, encoded_project, f, search_term, pattern, semaphore
+            client, encoded_project, f, search_term, ref, pattern, semaphore
         )
         for f in files_to_scan
     ]
@@ -287,6 +293,7 @@ async def _fallback_project_search(
         "search_term": search_term,
         "scope": "blobs",
         "project": project_display,
+        "ref": ref or "(default branch)",
         "total_results": total_matches,
         "results": paginated_results,
         "note": (
@@ -369,6 +376,7 @@ async def handle(client: GitLabClient, arguments: dict) -> dict[str, Any]:
                     per_page,
                     page,
                     project,
+                    ref,
                 )
             return {
                 "search_term": search_term,
@@ -398,6 +406,7 @@ async def handle(client: GitLabClient, arguments: dict) -> dict[str, Any]:
         "search_term": search_term,
         "scope": scope,
         "project": project or "(global)",
+        "ref": ref or "(GitLab default)",
         "page": page,
         "per_page": per_page,
         "total_results": len(formatted),

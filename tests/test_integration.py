@@ -19,6 +19,7 @@ from cerngitlab_mcp.tools import (
     get_project_readme,
     get_wiki_pages,
     inspect_project,
+    list_branches,
     list_releases,
     list_project_files,
     list_tags,
@@ -152,6 +153,26 @@ async def check_list_project_files(client: GitLabClient, project: str) -> None:
             client, {"project": project, "path": subdir}
         )
         print(f"  Entries: {sub['total_entries']}")
+
+
+async def check_list_branches(client: GitLabClient, project: str) -> None:
+    _header(f"list_branches ({project})")
+    result = await list_branches.handle(client, {"project": project, "per_page": 10})
+    print(f"  Branches on first page: {result['total_branches']}")
+    for branch in result["branches"][:5]:
+        default_marker = " (default)" if branch["default"] else ""
+        print(f"    {branch['name']}{default_marker}")
+
+    non_default = next(
+        (branch["name"] for branch in result["branches"] if not branch["default"]),
+        None,
+    )
+    if non_default:
+        _sub(f"branch-scoped tree: {non_default}")
+        tree = await list_project_files.handle(
+            client, {"project": project, "ref": non_default}
+        )
+        print(f"  Entries: {tree['total_entries']}")
 
 
 # ---------------------------------------------------------------------------
@@ -362,6 +383,7 @@ async def main() -> None:
         # Repository discovery
         await check_search_projects(client)
         await check_get_project_info(client, project, project_id)
+        await check_list_branches(client, project)
         await check_list_project_files(client, project)
 
         # Code and documentation

@@ -25,6 +25,18 @@ Get detailed information about a specific project including languages, statistic
 
 ### Repository Content
 
+#### `list_branches`
+List or search repository branches. Returned branch names can be passed as `ref`
+to `list_project_files`, `get_file_content`, `get_project_readme`, `search_code`,
+and `inspect_project`.
+
+| Parameter | Type | Required | Description |
+|---|---|---|---|
+| `project` | string | yes | Numeric ID or path |
+| `search` | string | no | Filter branches by name |
+| `page` | integer | no | Page number (default: 1) |
+| `per_page` | integer | no | Results count (default: 20, max: 100) |
+
 #### `list_project_files`
 Browse the file tree of a project's repository.
 
@@ -61,7 +73,7 @@ Search for code across repositories. Falls back to file-level grep when advanced
 | `search_term` | string | yes | Code/text to search for |
 | `project` | string | no | Limit to specific project |
 | `scope` | string | no | `blobs` (content) or `filenames` |
-| `ref` | string | no | Git branch or tag to search within. If omitted, uses `CERNGITLAB_DEFAULT_REF` from config (or searches all branches if not configured). |
+| `ref` | string | no | Git branch or tag to search within. If omitted, uses `CERNGITLAB_DEFAULT_REF` from config or GitLab's default ref behavior. |
 | `page` | integer | no | Page number (default: 1) |
 | `per_page` | integer | no | Results count (default: 20) |
 

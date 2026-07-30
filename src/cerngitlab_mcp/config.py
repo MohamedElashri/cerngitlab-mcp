@@ -48,7 +48,10 @@ class Settings(BaseSettings):
     )
     default_ref: str = Field(
         default="",
-        description="Default Git branch or tag to search within. Empty means search all branches.",
+        description=(
+            "Default Git branch or tag for code search. "
+            "Empty means use GitLab's default ref behavior."
+        ),
     )
 
     # CERN SSO settings

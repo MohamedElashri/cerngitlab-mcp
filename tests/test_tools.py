@@ -11,6 +11,7 @@ from cerngitlab_mcp.tools import (
     get_project_readme,
     get_wiki_pages,
     inspect_project,
+    list_branches,
     list_releases,
     list_project_files,
     list_tags,
@@ -163,6 +164,30 @@ class TestListProjectFiles:
         assert len(result["files"]) == 1
         assert result["directories"][0]["name"] == "src"
 
+    @pytest.mark.asyncio
+    async def test_lists_files_from_requested_branch(self, client, httpx_mock):
+        httpx_mock.add_response(
+            url=httpx.URL(
+                "https://gitlab.example.com/api/v4/projects/123/repository/tree",
+                params={"ref": "feature/new-api", "per_page": "100"},
+            ),
+            json=[
+                {
+                    "name": "branch-only.py",
+                    "type": "blob",
+                    "path": "branch-only.py",
+                    "mode": "100644",
+                }
+            ],
+        )
+
+        result = await list_project_files.handle(
+            client, {"project": "123", "ref": "feature/new-api"}
+        )
+
+        assert result["ref"] == "feature/new-api"
+        assert result["files"][0]["name"] == "branch-only.py"
+
 
 # ---------------------------------------------------------------------------
 # Code and documentation access tools
@@ -186,6 +211,32 @@ class TestGetFileContent:
         assert result["is_binary"] is False
         assert result["language"] == "python"
         assert "print('hello')" in result["content"]
+
+    @pytest.mark.asyncio
+    async def test_uses_requested_branch_without_default_resolution(
+        self, client, httpx_mock
+    ):
+        httpx_mock.add_response(
+            url=httpx.URL(
+                "https://gitlab.example.com/api/v4/projects/123/repository/files/main.py",
+                params={"ref": "feature/new-api"},
+            ),
+            json=make_file_response(
+                "print('branch')", "main.py", ref="feature/new-api"
+            ),
+        )
+
+        result = await get_file_content.handle(
+            client,
+            {
+                "project": "123",
+                "file_path": "main.py",
+                "ref": "feature/new-api",
+            },
+        )
+
+        assert result["ref"] == "feature/new-api"
+        assert "branch" in result["content"]
 
     @pytest.mark.asyncio
     async def test_detects_root_files_as_binary(self, client, httpx_mock):
@@ -247,6 +298,42 @@ class TestGetProjectReadme:
 
 
 class TestSearchCode:
+    @pytest.mark.asyncio
+    async def test_searches_requested_project_branch(self, client, httpx_mock):
+        httpx_mock.add_response(
+            url=httpx.URL(
+                "https://gitlab.example.com/api/v4/projects/123/search",
+                params={
+                    "search": "new_api",
+                    "scope": "blobs",
+                    "per_page": "20",
+                    "page": "1",
+                    "ref": "feature/new-api",
+                },
+            ),
+            json=[
+                {
+                    "filename": "api.py",
+                    "path": "src/api.py",
+                    "data": "def new_api():",
+                    "project_id": 123,
+                    "ref": "feature/new-api",
+                }
+            ],
+        )
+
+        result = await search_code.handle(
+            client,
+            {
+                "search_term": "new_api",
+                "project": "123",
+                "ref": "feature/new-api",
+            },
+        )
+
+        assert result["ref"] == "feature/new-api"
+        assert result["results"][0]["ref"] == "feature/new-api"
+
     @pytest.mark.asyncio
     async def test_handles_auth_required_gracefully(self, client, httpx_mock):
         httpx_mock.add_response(status_code=401, json={"message": "unauthorized"})
@@ -317,6 +404,61 @@ class TestSearchCode:
         assert result["results"][0]["file_path"] == "fit.py"
         assert "RooFit" in result["results"][0]["data"]
         assert "note" in result
+
+    @pytest.mark.httpx_mock(can_send_already_matched_responses=True)
+    @pytest.mark.asyncio
+    async def test_project_fallback_search_honors_requested_branch(
+        self, client, httpx_mock
+    ):
+        httpx_mock.add_response(
+            url=httpx.URL(
+                "https://gitlab.example.com/api/v4/projects/123/search",
+                params={
+                    "search": "branch_only",
+                    "scope": "blobs",
+                    "per_page": "20",
+                    "page": "1",
+                    "ref": "feature/new-api",
+                },
+            ),
+            status_code=400,
+            json={"error": "Scope supported only with advanced search"},
+        )
+        httpx_mock.add_response(
+            url=httpx.URL(
+                "https://gitlab.example.com/api/v4/projects/123/repository/tree",
+                params={
+                    "recursive": "true",
+                    "per_page": "200",
+                    "ref": "feature/new-api",
+                },
+            ),
+            json=[{"name": "api.py", "type": "blob", "path": "src/api.py"}],
+        )
+        httpx_mock.add_response(
+            url=httpx.URL(
+                "https://gitlab.example.com/api/v4/projects/123/repository/files/src%2Fapi.py",
+                params={"ref": "feature/new-api"},
+            ),
+            json=make_file_response(
+                "def branch_only():\n    pass\n",
+                "api.py",
+                ref="feature/new-api",
+            ),
+        )
+
+        result = await search_code.handle(
+            client,
+            {
+                "search_term": "branch_only",
+                "project": "123",
+                "ref": "feature/new-api",
+            },
+        )
+
+        assert result["ref"] == "feature/new-api"
+        assert result["total_results"] == 1
+        assert result["results"][0]["ref"] == "feature/new-api"
 
     @pytest.mark.asyncio
     async def test_search_code_pagination(self, client, httpx_mock):
@@ -557,6 +699,72 @@ class TestInspectProject:
         assert result["ci_config"]["found"] is True
         assert "build" in result["ci_config"]["analysis"]["stages"]
         assert "build" in result["ci_config"]["analysis"]["stages"]
+
+
+# ---------------------------------------------------------------------------
+# Branch discovery tools
+# ---------------------------------------------------------------------------
+
+
+class TestListBranches:
+    @pytest.mark.asyncio
+    async def test_returns_filtered_branches(self, client, httpx_mock):
+        httpx_mock.add_response(
+            url=httpx.URL(
+                "https://gitlab.example.com/api/v4/projects/lhcb%2FDaVinci/repository/branches",
+                params={"page": "2", "per_page": "10", "search": "release"},
+            ),
+            json=[
+                {
+                    "name": "release/v2",
+                    "default": False,
+                    "merged": False,
+                    "protected": True,
+                    "can_push": False,
+                    "web_url": "https://gitlab.example.com/lhcb/DaVinci/-/tree/release/v2",
+                    "commit": {
+                        "id": "abc123",
+                        "short_id": "abc123",
+                        "title": "Prepare release",
+                        "author_name": "Test User",
+                        "created_at": "2026-07-01T00:00:00Z",
+                        "committed_date": "2026-07-01T00:00:00Z",
+                        "web_url": "https://gitlab.example.com/commit/abc123",
+                    },
+                }
+            ],
+        )
+
+        result = await list_branches.handle(
+            client,
+            {
+                "project": "lhcb/DaVinci",
+                "search": "release",
+                "page": 2,
+                "per_page": 10,
+            },
+        )
+
+        assert result["search"] == "release"
+        assert result["page"] == 2
+        assert result["total_branches"] == 1
+        assert result["branches"][0]["name"] == "release/v2"
+        assert result["branches"][0]["protected"] is True
+        assert result["branches"][0]["commit"]["short_id"] == "abc123"
+
+    @pytest.mark.asyncio
+    async def test_handles_missing_project(self, client, httpx_mock):
+        httpx_mock.add_response(status_code=404, json={"message": "not found"})
+
+        result = await list_branches.handle(client, {"project": "no/exist"})
+
+        assert result["total_branches"] == 0
+        assert "not found" in result["note"].lower()
+
+    @pytest.mark.asyncio
+    async def test_requires_project(self, client):
+        with pytest.raises(ValueError, match="project"):
+            await list_branches.handle(client, {"project": ""})
 
 
 # ---------------------------------------------------------------------------

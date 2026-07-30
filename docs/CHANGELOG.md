@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 ## [0.2.0] - 2026-05-10
 
 ### Added
+- **Branch Discovery**: Added the `list_branches` MCP tool and `list-branches`
+  CLI command for listing or filtering repository branches, including commit,
+  protection, merge, and default-branch metadata.
+- **Branch-Aware Repository Workflows**: Branch names returned by
+  `list_branches` can be passed through the existing `ref` parameter to browse
+  files, retrieve file or README content, search code, and inspect a project.
 - **CERN SSO OAuth Authentication**: HTTP mode now authenticates users via CERN Single Sign-On (SSO) + GitLab OAuth, replacing the demo environment-variable auth system
   - `OAuthService`: Validates incoming CERN SSO JWT tokens against CERN's JWKS endpoint and orchestrates the GitLab OAuth authorization code flow
   - `SessionStore`: File-backed, per-user OAuth token cache stored under `CERNGITLAB_SESSION_STORAGE_PATH` (default `/tmp/cerngitlab/sessions`)
@@ -27,6 +33,9 @@ All notable changes to this project will be documented in this file.
 - **`examples/oauth_server.py`**: Reference startup script demonstrating environment variable configuration for CERN SSO mode
 
 ### Changed
+- **Code Search Fallback**: Project-scoped fallback search now applies the
+  requested branch/tag to both repository tree listing and every file fetch.
+  Previously, fallback file reads always used `HEAD`.
 - **HTTP Transport** (`transports/http.py`): Replaced the demo API-key auth system with full CERN SSO + GitLab OAuth. Users now authenticate with their real CERN SSO token; GitLab enforces all permissions natively.
 - **`McpRequest` / `McpResponse`**: Extracted from `transports/http.py` into a shared `models.py` module for reuse across transports.
 - **`exceptions.py`**: Added `AuthorizationRequiredError` to signal when a user needs to complete the GitLab OAuth flow.
