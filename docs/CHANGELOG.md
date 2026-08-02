@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+
+
+## [0.2.1] - 2026-08-02
+
+### Changed
+- **Dependency** security updates to MCP SDK dependency
+
 ## [0.2.0] - 2026-07-30
 
 ### Added

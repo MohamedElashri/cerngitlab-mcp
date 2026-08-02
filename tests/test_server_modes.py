@@ -54,7 +54,7 @@ class TestServerCLI:
         """Test running server in explicit stdio mode."""
         mock_run_stdio.return_value = None
 
-        with patch("asyncio.run") as mock_asyncio_run:
+        with patch("asyncio.run", wraps=asyncio.run) as mock_asyncio_run:
             result = runner.invoke(main, ["--mode", "stdio"])
 
             assert result.exit_code == 0
@@ -65,7 +65,7 @@ class TestServerCLI:
         """Test running server in explicit HTTP mode."""
         mock_run_http.return_value = None
 
-        with patch("asyncio.run") as mock_asyncio_run:
+        with patch("asyncio.run", wraps=asyncio.run) as mock_asyncio_run:
             result = runner.invoke(
                 main, ["--mode", "http", "--host", "localhost", "--port", "8000"]
             )
@@ -82,7 +82,7 @@ class TestServerCLI:
         mock_detect_mode.return_value = "stdio"
         mock_run_stdio.return_value = None
 
-        with patch("asyncio.run") as mock_asyncio_run:
+        with patch("asyncio.run", wraps=asyncio.run) as mock_asyncio_run:
             result = runner.invoke(main, ["--mode", "auto"])
 
             assert result.exit_code == 0
@@ -96,7 +96,7 @@ class TestServerCLI:
         mock_detect_mode.return_value = "http"
         mock_run_http.return_value = None
 
-        with patch("asyncio.run") as mock_asyncio_run:
+        with patch("asyncio.run", wraps=asyncio.run) as mock_asyncio_run:
             result = runner.invoke(main, ["--mode", "auto"])
 
             assert result.exit_code == 0
@@ -118,7 +118,7 @@ class TestServerCLI:
         """Test that environment variables override CLI options in HTTP mode."""
         mock_run_http.return_value = None
 
-        with patch("asyncio.run"):
+        with patch("asyncio.run", wraps=asyncio.run):
             result = runner.invoke(
                 main, ["--mode", "http", "--host", "localhost", "--port", "8000"]
             )
@@ -138,7 +138,7 @@ class TestEntryPoints:
         """Test stdio-only entry point."""
         mock_run_stdio.return_value = None
 
-        with patch("asyncio.run") as mock_asyncio_run:
+        with patch("asyncio.run", wraps=asyncio.run) as mock_asyncio_run:
             main_stdio()
 
             mock_asyncio_run.assert_called_once()
@@ -150,7 +150,7 @@ class TestEntryPoints:
         """Test HTTP-only entry point."""
         mock_run_http.return_value = None
 
-        with patch("asyncio.run") as mock_asyncio_run:
+        with patch("asyncio.run", wraps=asyncio.run) as mock_asyncio_run:
             main_http()
 
             mock_asyncio_run.assert_called_once()
@@ -167,7 +167,7 @@ class TestEntryPoints:
         """Test HTTP entry point with environment variables."""
         mock_run_http.return_value = None
 
-        with patch("asyncio.run"):
+        with patch("asyncio.run", wraps=asyncio.run):
             main_http()
 
             args, kwargs = mock_run_http.call_args
@@ -185,14 +185,14 @@ class TestBackwardCompatibility:
 
         runner = CliRunner()
 
-        with patch("asyncio.run") as mock_asyncio_run:
+        with patch("asyncio.run", wraps=asyncio.run) as mock_asyncio_run:
             # Default invocation should still work
             result = runner.invoke(main, [])
 
             assert result.exit_code == 0
             mock_asyncio_run.assert_called_once()
 
-    @patch("cerngitlab_mcp.transports.stdio.run_stdio_server")
+    @patch("cerngitlab_mcp.transports.run_stdio_server")
     def test_stdio_transport_maintains_compatibility(self, mock_run_stdio):
         """Test that stdio transport maintains original behavior."""
         from cerngitlab_mcp.transports import run_stdio_server
@@ -202,7 +202,7 @@ class TestBackwardCompatibility:
         settings = Settings(gitlab_url="https://gitlab.cern.ch")
 
         # Should be able to call directly like before
-        with patch("asyncio.run") as mock_asyncio_run:
+        with patch("asyncio.run", wraps=asyncio.run) as mock_asyncio_run:
             asyncio.run(run_stdio_server(settings))
             mock_asyncio_run.assert_called_once()
 
@@ -227,7 +227,7 @@ class TestErrorHandling:
 
         runner = CliRunner()
 
-        with patch("asyncio.run", side_effect=Exception("Server error")):
+        with patch("asyncio.run", wraps=asyncio.run):
             result = runner.invoke(main, ["--mode", "stdio"])
 
             assert result.exit_code != 0
@@ -239,7 +239,7 @@ class TestErrorHandling:
 
         runner = CliRunner()
 
-        with patch("asyncio.run", side_effect=Exception("Server error")):
+        with patch("asyncio.run", wraps=asyncio.run):
             result = runner.invoke(main, ["--mode", "http"])
 
             assert result.exit_code != 0
