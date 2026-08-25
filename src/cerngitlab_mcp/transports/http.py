@@ -1,17 +1,29 @@
-"""Simple HTTP transport with CERN SSO + OAuth authentication."""
+"""HTTP transport with CERN SSO + OAuth authentication.
+
+Exposes two surfaces:
+
+- ``/mcp``: a real MCP endpoint speaking Streamable HTTP under the
+  2026-07-28 protocol revision (stateless mode), so any standard MCP
+  client can connect. Legacy clients using the ``initialize`` handshake
+  are still served through the SDK's compatibility layer.
+- REST endpoints (``/tools``, ``/oauth/*``, ...): the pre-existing
+  JSON API retained for backward compatibility.
+"""
 
 import asyncio
+import json as jsonlib
 import logging
-from contextlib import asynccontextmanager
-from typing import Dict
+from contextlib import AsyncExitStack, asynccontextmanager
+from typing import Any, Dict
 
-from fastapi import FastAPI, HTTPException, Header
+from fastapi import FastAPI, Header, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
+from starlette.routing import Route
 import uvicorn
 
 from ..config import Settings
-from ..core import McpServerCore
+from ..core import SERVER_VERSION, McpServerCore, build_mcp_server
 from ..gitlab_client import GitLabClient
 from ..logging import setup_logging
 from ..models import McpRequest, McpResponse
@@ -23,7 +35,7 @@ logger = logging.getLogger(__name__)
 
 
 class UserSession:
-    """Represents a user session with isolated GitLab client and core."""
+    """Represents a user session with isolated GitLab client and MCP server."""
 
     def __init__(self, user_id: str, gitlab_token: str, base_settings: Settings):
         """Initialize user session.
@@ -49,21 +61,103 @@ class UserSession:
         )
 
         self.gitlab_client = GitLabClient(self.settings)
-        self.core = McpServerCore(self.settings, self.gitlab_client)
+
+        # MCP protocol surface (Streamable HTTP, stateless)
+        self.mcp = build_mcp_server(self.settings, self.gitlab_client)
+        # Creating the app wires up the underlying StreamableHTTPSessionManager;
+        # requests are dispatched straight into its ASGI entry point.
+        self.mcp.streamable_http_app(stateless_http=True)
+        self._session_manager = self.mcp.session_manager
+        self.mcp_asgi = self._session_manager.asgi_app
+
+    @property
+    def core(self) -> McpServerCore:
+        if getattr(self, "_core", None) is None:
+            self._core = McpServerCore(self.settings, self.gitlab_client)
+        return self._core
 
     async def close(self):
         """Clean up session resources."""
         await self.core.close()
 
 
+class McpHttpDispatcher:
+    """ASGI app that authenticates requests then dispatches to the
+    requesting user's per-user MCP server over Streamable HTTP."""
+
+    def __init__(self, transport: "HttpTransport"):
+        self.transport = transport
+
+    async def __call__(self, scope: Dict[str, Any], receive: Any, send: Any) -> None:
+        if scope["type"] == "lifespan":
+            return
+
+        auth_header = ""
+        for key, value in scope.get("headers", []):
+            if key == b"authorization":
+                auth_header = value.decode("latin-1")
+                break
+
+        try:
+            cern_token = self.transport._extract_token(auth_header)
+        except HTTPException as exc:
+            await self._send_json(send, exc.status_code, {"error": exc.detail})
+            return
+
+        try:
+            (
+                username,
+                oauth_token,
+            ) = await self.transport.oauth_service.authenticate_user(cern_token)
+            await self.transport.session_store.store_session(username, oauth_token)
+            session = await self.transport.get_user_session(username, oauth_token)
+        except AuthorizationRequiredError as e:
+            await self._send_json(
+                send,
+                202,
+                {
+                    "error": "authorization_required",
+                    "username": e.username,
+                    "authorization_url": e.authorization_url,
+                    "message": "GitLab authorization required",
+                },
+            )
+            return
+        except AuthenticationError:
+            await self._send_json(send, 401, {"error": "Authentication failed"})
+            return
+        except Exception as exc:
+            logger.exception("MCP dispatch failed")
+            await self._send_json(send, 500, {"error": f"Internal error: {exc}"})
+            return
+
+        await session.mcp_asgi(scope, receive, send)
+
+    @staticmethod
+    async def _send_json(send: Any, status: int, payload: Dict[str, Any]) -> None:
+        body = jsonlib.dumps(payload).encode()
+        await send(
+            {
+                "type": "http.response.start",
+                "status": status,
+                "headers": [
+                    [b"content-type", b"application/json"],
+                    [b"content-length", str(len(body)).encode()],
+                ],
+            }
+        )
+        await send({"type": "http.response.body", "body": body})
+
+
 class HttpTransport:
-    """Simple HTTP transport that relies on GitLab's permission system."""
+    """CERN SSO-enabled HTTP transport serving MCP over Streamable HTTP."""
 
     def __init__(self, settings: Settings):
         self.settings = settings
         self.oauth_service = OAuthService(settings)
         self.session_store = SessionStore(settings)
         self.user_sessions: Dict[str, UserSession] = {}
+        self._session_exit_stacks: Dict[str, Any] = {}
 
         # Link services
         self.oauth_service.set_session_store(self.session_store)
@@ -78,6 +172,9 @@ class HttpTransport:
             setup_logging(self.settings.log_level)
             logger.info("Starting CERN GitLab MCP server (CERN SSO mode)")
             logger.info("GitLab URL: %s", self.settings.gitlab_url)
+            logger.info(
+                "MCP endpoint: /mcp (Streamable HTTP, protocol %s)", SERVER_VERSION
+            )
 
             # Start periodic cleanup task
             cleanup_task = asyncio.create_task(self._periodic_cleanup())
@@ -86,14 +183,14 @@ class HttpTransport:
 
             # Cleanup
             cleanup_task.cancel()
-            for session in self.user_sessions.values():
-                await session.close()
+            for username in list(self.user_sessions):
+                await self.close_session(username)
             logger.info("HTTP server shutdown complete")
 
         app = FastAPI(
             title="CERN GitLab MCP Server",
-            description="CERN SSO-enabled multi-user HTTP API for GitLab MCP tools",
-            version="0.2.0",
+            description="CERN SSO-enabled multi-user MCP server for GitLab tools",
+            version=SERVER_VERSION,
             lifespan=lifespan,
         )
 
@@ -106,8 +203,38 @@ class HttpTransport:
             allow_headers=["*"],
         )
 
+        # MCP protocol endpoint (Streamable HTTP, protocol 2026-07-28)
+        app.router.routes.append(
+            Route(
+                "/mcp",
+                McpHttpDispatcher(self),
+                methods=["GET", "POST", "DELETE"],
+            )
+        )
+
         self._setup_routes(app)
         return app
+
+    async def get_user_session(self, username: str, oauth_token: str) -> UserSession:
+        """Get or create an authenticated user session with a running
+        MCP Streamable HTTP session manager."""
+        if username not in self.user_sessions:
+            session = UserSession(username, oauth_token, self.settings)
+            stack = AsyncExitStack()
+            await stack.enter_async_context(session._session_manager.run())
+            self._session_exit_stacks[username] = stack
+            self.user_sessions[username] = session
+            logger.info("Created session for user: %s", username)
+        return self.user_sessions[username]
+
+    async def close_session(self, username: str) -> None:
+        """Tear down a user session and its MCP session manager."""
+        stack = self._session_exit_stacks.pop(username, None)
+        session = self.user_sessions.pop(username, None)
+        if stack is not None:
+            await stack.aclose()
+        if session is not None:
+            await session.close()
 
     def _setup_routes(self, app: FastAPI):
         """Set up simple OAuth routes."""
@@ -116,10 +243,13 @@ class HttpTransport:
         async def root():
             return {
                 "name": "CERN GitLab MCP Server",
-                "version": "0.2.0",
+                "version": SERVER_VERSION,
                 "auth_mode": "cern_sso_oauth",
                 "gitlab_url": self.settings.gitlab_url,
-                "description": "Uses your existing GitLab permissions",
+                "protocol_version": "2026-07-28",
+                "description": (
+                    "Uses your existing GitLab permissions. Connect MCP clients to /mcp"
+                ),
             }
 
         @app.get("/health")
@@ -226,7 +356,7 @@ class HttpTransport:
             """List available tools."""
             session = await self._get_user_session(authorization)
             tools = session.core.get_tool_definitions()
-            return {"tools": [tool.model_dump() for tool in tools]}
+            return {"tools": [tool.model_dump(by_alias=True) for tool in tools]}
 
         @app.post("/tools/{tool_name}")
         async def call_tool(
@@ -261,8 +391,7 @@ class HttpTransport:
 
                 # Remove from active sessions
                 if username in self.user_sessions:
-                    await self.user_sessions[username].close()
-                    del self.user_sessions[username]
+                    await self.close_session(username)
 
                 return {"status": "session_revoked", "username": username}
 
@@ -286,15 +415,7 @@ class HttpTransport:
 
             # Store session
             await self.session_store.store_session(username, oauth_token)
-
-            # Get or create user session
-            if username not in self.user_sessions:
-                self.user_sessions[username] = UserSession(
-                    username, oauth_token, self.settings
-                )
-                logger.info(f"Created session for user: {username}")
-
-            return self.user_sessions[username]
+            return await self.get_user_session(username, oauth_token)
 
         except AuthorizationRequiredError as e:
             raise HTTPException(
@@ -317,8 +438,6 @@ class HttpTransport:
 
     async def _periodic_cleanup(self):
         """Periodic cleanup of expired sessions."""
-        import asyncio
-
         while True:
             try:
                 await asyncio.sleep(3600)  # Run every hour

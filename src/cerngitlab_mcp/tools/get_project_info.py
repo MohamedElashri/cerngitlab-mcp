@@ -15,7 +15,7 @@ TOOL_DEFINITION = Tool(
         "(metadata, statistics, description). Accepts either a numeric project ID "
         "or a full project path (e.g. 'atlas/athena')."
     ),
-    inputSchema={
+    input_schema={
         "type": "object",
         "properties": {
             "project": {

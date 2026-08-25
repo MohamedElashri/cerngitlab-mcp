@@ -14,7 +14,7 @@ TOOL_DEFINITION = Tool(
         "issues, wikis, etc.) by keywords, topics, or programming language. "
         "Useful for discovering HEP code, analysis frameworks, and physics tools."
     ),
-    inputSchema={
+    input_schema={
         "type": "object",
         "properties": {
             "query": {

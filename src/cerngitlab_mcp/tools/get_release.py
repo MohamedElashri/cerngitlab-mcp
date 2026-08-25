@@ -16,7 +16,7 @@ TOOL_DEFINITION = Tool(
         "Returns release notes, assets, commit info, and download links. "
         "Requires the tag name of the release."
     ),
-    inputSchema={
+    input_schema={
         "type": "object",
         "properties": {
             "project": {

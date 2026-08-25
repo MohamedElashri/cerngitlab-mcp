@@ -19,7 +19,7 @@ TOOL_DEFINITION = Tool(
         "Returns the raw YAML content along with a basic structural analysis: "
         "detected stages, jobs, and included templates."
     ),
-    inputSchema={
+    input_schema={
         "type": "object",
         "properties": {
             "project": {

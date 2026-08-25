@@ -16,7 +16,7 @@ TOOL_DEFINITION = Tool(
         "Can list all wiki pages or retrieve the content of a specific page. "
         "Useful for accessing project documentation that lives in the wiki."
     ),
-    inputSchema={
+    input_schema={
         "type": "object",
         "properties": {
             "project": {

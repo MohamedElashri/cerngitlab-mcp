@@ -67,7 +67,7 @@ class OAuthService:
             jwks = await self._get_cern_jwks()
             payload = jwt.decode(
                 token,
-                jwks,
+                jwt.PyJWK.from_dict(jwks["keys"][0]).key,
                 algorithms=["RS256"],
                 audience=self.settings.cern_client_id,
                 issuer=self.cern_auth_url,

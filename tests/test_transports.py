@@ -1,7 +1,8 @@
 """Unit tests for transport layer classes."""
 
+from unittest.mock import AsyncMock, patch
+
 import pytest
-from unittest.mock import AsyncMock, MagicMock, patch
 
 from cerngitlab_mcp.config import Settings
 from cerngitlab_mcp.core import McpServerCore
@@ -32,47 +33,14 @@ class TestStdioTransport:
     def test_initialization(self, stdio_transport, settings):
         """Test that StdioTransport initializes correctly."""
         assert stdio_transport.settings == settings
-        assert stdio_transport.gitlab_client is None
-        assert stdio_transport.core is None
-        assert stdio_transport.server is not None
-
-    def test_get_gitlab_client(self, stdio_transport):
-        """Test GitLab client creation."""
-        client = stdio_transport._get_gitlab_client()
-        assert isinstance(client, GitLabClient)
-        assert stdio_transport.gitlab_client is client
-
-        # Second call should return same instance
-        client2 = stdio_transport._get_gitlab_client()
-        assert client2 is client
-
-    def test_get_core(self, stdio_transport):
-        """Test core creation."""
-        core = stdio_transport._get_core()
-        assert isinstance(core, McpServerCore)
-        assert stdio_transport.core is core
-
-        # Second call should return same instance
-        core2 = stdio_transport._get_core()
-        assert core2 is core
+        assert isinstance(stdio_transport.gitlab_client, GitLabClient)
+        assert stdio_transport.mcp is not None
 
     @pytest.mark.asyncio
-    @patch("cerngitlab_mcp.transports.stdio.stdio_server")
     @patch("cerngitlab_mcp.transports.stdio.setup_logging")
-    async def test_run(self, mock_setup_logging, mock_stdio_server, stdio_transport):
+    async def test_run(self, mock_setup_logging, stdio_transport):
         """Test stdio transport run method."""
-        # Mock the stdio_server context manager
-        mock_read_stream = MagicMock()
-        mock_write_stream = MagicMock()
-        mock_stdio_server.return_value.__aenter__.return_value = (
-            mock_read_stream,
-            mock_write_stream,
-        )
-
-        # Mock the server run method
-        stdio_transport.server.run = AsyncMock()
-
-        # Mock GitLab client
+        # Mock the GitLab connectivity check
         mock_client = AsyncMock()
         mock_client.test_connection.return_value = {
             "status": "connected",
@@ -80,23 +48,23 @@ class TestStdioTransport:
         }
         stdio_transport.gitlab_client = mock_client
 
-        # Mock core
-        mock_core = AsyncMock()
-        stdio_transport.core = mock_core
+        with patch.object(stdio_transport, "mcp") as mock_mcp:
+            mock_mcp.run_stdio_async = AsyncMock()
+            await stdio_transport.run()
 
-        await stdio_transport.run()
+            # Verify setup_logging was called
+            mock_setup_logging.assert_called_once_with(
+                stdio_transport.settings.log_level
+            )
 
-        # Verify setup_logging was called
-        mock_setup_logging.assert_called_once_with(stdio_transport.settings.log_level)
+            # Verify GitLab connectivity check
+            mock_client.test_connection.assert_called_once()
 
-        # Verify GitLab connectivity check
-        mock_client.test_connection.assert_called_once()
-
-        # Verify server.run was called
-        stdio_transport.server.run.assert_called_once()
+            # Verify the MCP server was started over stdio
+            mock_mcp.run_stdio_async.assert_called_once()
 
         # Verify cleanup
-        mock_core.close.assert_called_once()
+        mock_client.close.assert_called_once()
 
 
 class TestUserSession:
@@ -123,6 +91,8 @@ class TestUserSession:
         assert user_session.settings.gitlab_url == base_settings.gitlab_url
         assert isinstance(user_session.gitlab_client, GitLabClient)
         assert isinstance(user_session.core, McpServerCore)
+        assert user_session.mcp is not None
+        assert user_session.mcp_asgi is not None
 
     @pytest.mark.asyncio
     async def test_close(self, user_session):

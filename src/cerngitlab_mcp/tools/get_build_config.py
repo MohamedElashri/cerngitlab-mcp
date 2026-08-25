@@ -31,7 +31,7 @@ TOOL_DEFINITION = Tool(
         "Returns the content of all found build files with metadata about "
         "the detected build system."
     ),
-    inputSchema={
+    input_schema={
         "type": "object",
         "properties": {
             "project": {

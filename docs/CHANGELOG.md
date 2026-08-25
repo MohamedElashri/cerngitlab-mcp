@@ -4,6 +4,39 @@ All notable changes to this project will be documented in this file.
 
 
 
+## [0.3.0] - 2026-08-25
+
+### Added
+- **MCP Protocol 2026-07-28 Support**: Migrated the server to MCP Python SDK
+  v2 (`mcp>=2.1,<3`). The server now speaks the stateless `2026-07-28`
+  protocol revision while remaining backward compatible with clients using
+  the `initialize` handshake (`2025-11-25` and earlier).
+- **High-Level Server API**: Replaced the low-level `mcp.server.Server`
+  handler wiring with the SDK's decorator-based `MCPServer`. Tool input and
+  output schemas are generated from typed Python signatures.
+- **Tool Annotations**: All tools now advertise read-only hints
+  (`readOnlyHint`) and, for search tools, open-world hints
+  (`openWorldHint`) per the 2025-11-25+ specification.
+- **Structured Tool Output**: Tools declare output schemas; results are
+  returned as structured content alongside text.
+- **Proper MCP Streamable HTTP Endpoint**: HTTP mode now serves a real MCP
+  endpoint at `/mcp` (Streamable HTTP, stateless mode) authenticated via
+  CERN SSO bearer tokens. Per-user isolated MCP server instances are
+  created per session. Previously HTTP mode exposed only a custom REST
+  API that no standard MCP client could connect to.
+- **Server Metadata**: The server now reports title, description,
+  instructions, and version through `serverInfo`.
+- **JSON-RPC Error Mapping**: GitLab errors and invalid arguments surface
+  as protocol-level JSON-RPC errors instead of `isError` text payloads.
+
+### Changed
+- **Dependency**: `mcp>=2.1,<3` (was `mcp>=1.0.0`). The v2 line replaces
+  `httpx-sse` with `httpx2` internally and adds `opentelemetry-api`,
+  `truststore`, and the exact-pinned `mcp-types` package.
+- **Legacy REST endpoints** (`/tools`, `/oauth/*`, `/session`) are retained
+  for backward compatibility alongside the new `/mcp` endpoint.
+- Dev dependency: added `types-aiofiles`.
+
 ## [0.2.1] - 2026-08-02
 
 ### Changed

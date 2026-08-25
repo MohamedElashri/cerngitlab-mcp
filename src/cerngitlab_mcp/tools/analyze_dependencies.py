@@ -43,7 +43,7 @@ TOOL_DEFINITION = Tool(
         "and more. Focused on HEP-relevant ecosystems (Python, C++, Fortran). "
         "Returns a structured list of dependencies per file found."
     ),
-    inputSchema={
+    input_schema={
         "type": "object",
         "properties": {
             "project": {

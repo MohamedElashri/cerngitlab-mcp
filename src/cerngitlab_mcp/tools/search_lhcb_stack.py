@@ -15,7 +15,7 @@ TOOL_DEFINITION = Tool(
         "Search for code snippets within a specific LHCb software stack (e.g., 'sim11'). "
         "Automatically resolves the correct Git references for projects in that stack."
     ),
-    inputSchema={
+    input_schema={
         "type": "object",
         "properties": {
             "search_term": {

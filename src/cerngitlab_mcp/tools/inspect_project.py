@@ -22,7 +22,7 @@ TOOL_DEFINITION = Tool(
         "detection, and CI/CD inspection into a single tool. "
         "Returns a comprehensive summary of the project's technical stack."
     ),
-    inputSchema={
+    input_schema={
         "type": "object",
         "properties": {
             "project": {

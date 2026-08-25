@@ -19,7 +19,7 @@ class SessionStore:
         self.session_ttl = timedelta(hours=2)
 
     async def store_session(
-        self, username: str, oauth_token: str, refresh_token: str = None
+        self, username: str, oauth_token: str, refresh_token: str | None = None
     ) -> None:
         """Store user OAuth session."""
         session_data = {

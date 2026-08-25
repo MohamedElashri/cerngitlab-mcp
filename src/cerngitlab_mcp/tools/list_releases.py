@@ -16,7 +16,7 @@ TOOL_DEFINITION = Tool(
         "Returns release tags, dates, and descriptions. "
         "Useful for tracking software versions and finding changelogs."
     ),
-    inputSchema={
+    input_schema={
         "type": "object",
         "properties": {
             "project": {

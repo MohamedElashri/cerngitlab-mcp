@@ -31,7 +31,7 @@ TOOL_DEFINITION = Tool(
         "Automatically detects standard README filenames (README.md, README.rst, etc.). "
         "Returns the raw content — useful for understanding what a project does."
     ),
-    inputSchema={
+    input_schema={
         "type": "object",
         "properties": {
             "project": {

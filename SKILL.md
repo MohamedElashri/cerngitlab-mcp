@@ -5,9 +5,54 @@ description: "Search, browse, and analyze CERN GitLab repositories for HEP code,
 
 # CERN GitLab CLI
 
-A command-line interface for interacting with CERN GitLab (`gitlab.cern.ch`). Provides 15 tools for searching, browsing, and analyzing HEP code repositories.
+A command-line interface and MCP server for interacting with CERN GitLab (`gitlab.cern.ch`). Provides 15 tools for searching, browsing, and analyzing HEP code repositories.
 
 The CLI binary is `cerngitlab-cli`. All commands return structured JSON. Public repositories work without authentication; private/internal repos and code search require a token.
+
+## MCP Server
+
+The same 15 tools are exposed over the Model Context Protocol using the
+MCP Python SDK v2 (protocol revision `2026-07-28`). Older clients that use
+the legacy `initialize` handshake (`2025-11-25` and earlier) remain
+supported through automatic protocol negotiation.
+
+Two entry points are installed:
+
+| Binary | Mode | Description |
+|--------|------|-------------|
+| `cerngitlab-mcp-stdio` | stdio | Single-user mode over stdin/stdout (default) |
+| `cerngitlab-mcp-http` | HTTP | Multi-user mode with CERN SSO authentication |
+
+Or use `cerngitlab-mcp --mode auto|stdio|http` (auto-detects from
+`CERNGITLAB_HOST`/`CERNGITLAB_PORT`).
+
+### Connecting from an MCP client
+
+**stdio** — register the command directly:
+
+```json
+{
+  "mcpServers": {
+    "cern-gitlab": {
+      "command": "cerngitlab-mcp-stdio",
+      "env": { "CERNGITLAB_TOKEN": "glpat-xxxxxxxxxxxx" }
+    }
+  }
+}
+```
+
+**HTTP** — point the client at `http://<host>:<port>/mcp`. Requests must
+carry a CERN SSO bearer token in the `Authorization: Bearer <token>`
+header. The endpoint speaks Streamable HTTP in stateless mode, so no
+sticky sessions are required.
+
+### Protocol capabilities
+
+- All tools advertise **read-only annotations** (`readOnlyHint: true`);
+  search tools additionally set `openWorldHint: true`.
+- Every tool declares an **output schema** and returns structured content.
+- GitLab errors and invalid arguments surface as **JSON-RPC errors**
+  rather than error text payloads.
 
 ## Configuration
 
@@ -22,6 +67,7 @@ Set environment variables prefixed with `CERNGITLAB_`:
 | `CERNGITLAB_RATE_LIMIT_PER_MINUTE` | `300` | API rate limit |
 | `CERNGITLAB_LOG_LEVEL` | `INFO` | Logging level |
 | `CERNGITLAB_DEFAULT_REF` | *(empty)* | Default Git branch/tag |
+| `CERNGITLAB_HOST` / `CERNGITLAB_PORT` | *(empty)* | Set to run in HTTP mode (bind address/port, default `8000`) |
 
 To create a token: visit `https://gitlab.cern.ch/-/user_settings/personal_access_tokens`, create with `read_api` scope, then `export CERNGITLAB_TOKEN=glpat-xxxxxxxxxxxx`.
 

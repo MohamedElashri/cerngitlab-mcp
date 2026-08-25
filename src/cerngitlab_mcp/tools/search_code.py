@@ -25,7 +25,7 @@ TOOL_DEFINITION = Tool(
         "Returns matching files with line-level context. "
         "Useful for finding usage examples of specific libraries, functions, or patterns."
     ),
-    inputSchema={
+    input_schema={
         "type": "object",
         "properties": {
             "search_term": {

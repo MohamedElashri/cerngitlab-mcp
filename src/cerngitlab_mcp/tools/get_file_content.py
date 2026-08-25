@@ -208,7 +208,7 @@ TOOL_DEFINITION = Tool(
         "a language hint for syntax highlighting. Binary files are detected and "
         "reported without attempting to decode them."
     ),
-    inputSchema={
+    input_schema={
         "type": "object",
         "properties": {
             "project": {

@@ -16,7 +16,7 @@ TOOL_DEFINITION = Tool(
         "Returns branch names and commit metadata so a branch can be selected and "
         "passed as the 'ref' argument to repository content and code-search tools."
     ),
-    inputSchema={
+    input_schema={
         "type": "object",
         "properties": {
             "project": {

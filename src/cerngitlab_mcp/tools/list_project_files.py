@@ -14,7 +14,7 @@ TOOL_DEFINITION = Tool(
         "List files and directories in a CERN GitLab project's repository. "
         "Supports recursive listing and path specific lookups."
     ),
-    inputSchema={
+    input_schema={
         "type": "object",
         "properties": {
             "project": {

@@ -15,7 +15,7 @@ TOOL_DEFINITION = Tool(
         "Useful for understanding how a library is used, finding solution to common errors, "
         "or checking if a feature is supported."
     ),
-    inputSchema={
+    input_schema={
         "type": "object",
         "properties": {
             "search_term": {

@@ -16,7 +16,7 @@ TOOL_DEFINITION = Tool(
         "Returns tag names with their associated commit references. "
         "Useful for finding version history and release points."
     ),
-    inputSchema={
+    input_schema={
         "type": "object",
         "properties": {
             "project": {
