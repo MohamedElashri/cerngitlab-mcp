@@ -6,6 +6,7 @@ import httpx
 import pytest
 from click.testing import CliRunner
 
+from cerngitlab_mcp import __version__
 from cerngitlab_mcp.cli.main import cli
 from cerngitlab_mcp.config import Settings
 
@@ -935,7 +936,7 @@ class TestCLIHelp:
         """Test CLI version flag."""
         result = cli_runner.invoke(cli, ["--version"])
         assert result.exit_code == 0
-        assert "0.2.0" in result.output
+        assert __version__ in result.output
 
     def test_command_help(self, cli_runner):
         """Test individual command help."""

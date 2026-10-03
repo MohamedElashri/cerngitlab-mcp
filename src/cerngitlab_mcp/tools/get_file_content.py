@@ -1,7 +1,6 @@
 """MCP tool: get_file_content — retrieve file content from a CERN GitLab repository."""
 
 import base64
-import mimetypes
 from typing import Any
 from urllib.parse import quote
 
@@ -47,6 +46,10 @@ _BINARY_EXTENSIONS = frozenset(
         ".npz",
         ".h5",
         ".hdf5",
+        ".pt",
+        ".pth",
+        ".bin",
+        ".onnx",
         ".ttf",
         ".otf",
         ".woff",
@@ -56,88 +59,6 @@ _BINARY_EXTENSIONS = frozenset(
         ".wav",
         ".avi",
         ".mov",
-    }
-)
-
-# Known text file extensions that mimetypes may not recognize
-_TEXT_EXTENSIONS = frozenset(
-    {
-        ".yml",
-        ".yaml",
-        ".toml",
-        ".cfg",
-        ".ini",
-        ".conf",
-        ".cmake",
-        ".in",
-        ".txt",
-        ".md",
-        ".rst",
-        ".tex",
-        ".py",
-        ".pyx",
-        ".pxd",
-        ".pyi",
-        ".cpp",
-        ".cxx",
-        ".cc",
-        ".c",
-        ".h",
-        ".hpp",
-        ".hxx",
-        ".java",
-        ".scala",
-        ".kt",
-        ".js",
-        ".mjs",
-        ".ts",
-        ".tsx",
-        ".jsx",
-        ".rs",
-        ".go",
-        ".rb",
-        ".jl",
-        ".r",
-        ".sh",
-        ".bash",
-        ".zsh",
-        ".fish",
-        ".f90",
-        ".f95",
-        ".f03",
-        ".f",
-        ".json",
-        ".xml",
-        ".html",
-        ".htm",
-        ".css",
-        ".sql",
-        ".gitignore",
-        ".gitmodules",
-        ".gitattributes",
-        ".dockerignore",
-        ".env",
-        ".editorconfig",
-    }
-)
-
-# Filenames (that are without extension) that are known text files
-_TEXT_FILENAMES = frozenset(
-    {
-        "Makefile",
-        "CMakeLists.txt",
-        "Dockerfile",
-        "Jenkinsfile",
-        "README",
-        "LICENSE",
-        "CHANGELOG",
-        "CONTRIBUTING",
-        ".gitignore",
-        ".gitmodules",
-        ".gitattributes",
-        ".gitlab-ci.yml",
-        ".clang-format",
-        ".clang-tidy",
     }
 )
 
@@ -154,6 +75,9 @@ _LANGUAGE_HINTS: dict[str, str] = {
     ".h": "cpp",
     ".hpp": "cpp",
     ".hxx": "cpp",
+    ".cu": "cuda",
+    ".cuh": "cuda",
+    ".cuda": "cuda",
     ".java": "java",
     ".js": "javascript",
     ".mjs": "javascript",
@@ -232,33 +156,20 @@ TOOL_DEFINITION = Tool(
 )
 
 
-def _is_binary(file_path: str) -> bool:
-    """Check if a file is likely binary based on its extension and name."""
+def _has_binary_extension(file_path: str) -> bool:
+    """Check if a file has a known binary extension."""
     filename = file_path.split("/")[-1]
-
-    # Check known text filenames first
-    if filename in _TEXT_FILENAMES:
-        return False
-
     ext = "." + filename.rsplit(".", 1)[-1].lower() if "." in filename else ""
+    return ext in _BINARY_EXTENSIONS
 
-    # Check known text extensions
-    if ext in _TEXT_EXTENSIONS:
-        return False
 
-    # Check known binary extensions
-    if ext in _BINARY_EXTENSIONS:
-        return True
+def _is_binary_content(raw_bytes: bytes) -> bool:
+    """Check if content is binary (contains NUL byte)."""
+    return b"\x00" in raw_bytes
 
-    # Fall back to mimetypes
-    mime_type, _ = mimetypes.guess_type(file_path)
-    if mime_type and not mime_type.startswith("text/"):
-        return mime_type not in (
-            "application/json",
-            "application/xml",
-            "application/javascript",
-        )
-    return False
+
+# Backward-compatibility alias
+_is_binary = _has_binary_extension
 
 
 def _get_language_hint(file_path: str) -> str | None:
@@ -314,25 +225,42 @@ async def handle(client: GitLabClient, arguments: dict) -> dict[str, Any]:
         "content_sha256": data.get("content_sha256"),
     }
 
-    # Check if binary
-    if _is_binary(file_name):
+    # 1. Fast-path check: known binary extensions (.root, images, compiled binaries)
+    if _has_binary_extension(file_name):
         result["is_binary"] = True
         result["content"] = f"[Binary file, {size} bytes]"
         result["language"] = None
+        return result
+
+    # 2. Treat as text candidate: decode and sniff content
+    result["is_binary"] = False
+    if encoding == "base64" and content_encoded:
+        try:
+            raw_bytes = base64.b64decode(content_encoded)
+        except Exception:
+            result["is_binary"] = True
+            result["content"] = f"[Binary file, {size} bytes — failed to decode base64]"
+            result["language"] = None
+            return result
+
+        # Check for NUL bytes in the first 8000 bytes (Git-style)
+        if _is_binary_content(raw_bytes):
+            result["is_binary"] = True
+            result["content"] = f"[Binary file, {size} bytes]"
+            result["language"] = None
+            return result
+
+        try:
+            result["content"] = raw_bytes.decode("utf-8-sig")
+        except UnicodeDecodeError:
+            result["is_binary"] = True
+            result["content"] = (
+                f"[Binary file, {size} bytes — failed to decode as UTF-8]"
+            )
+            result["language"] = None
+            return result
     else:
-        result["is_binary"] = False
-        # Decode content
-        if encoding == "base64" and content_encoded:
-            try:
-                result["content"] = base64.b64decode(content_encoded).decode("utf-8")
-            except (UnicodeDecodeError, ValueError):
-                result["is_binary"] = True
-                result["content"] = (
-                    f"[Binary file, {size} bytes — failed to decode as UTF-8]"
-                )
-        else:
-            result["content"] = content_encoded
+        result["content"] = content_encoded
 
-        result["language"] = _get_language_hint(file_name)
-
+    result["language"] = _get_language_hint(file_name)
     return result

@@ -272,6 +272,104 @@ class TestGetFileContent:
         assert result["language"] == "yaml"
 
     @pytest.mark.asyncio
+    async def test_cuda_files_are_not_binary(self, client, httpx_mock):
+        httpx_mock.add_response(json={"default_branch": "main"})
+        httpx_mock.add_response(
+            json=make_file_response("__global__ void k() {}", "kernel.cu")
+        )
+        result = await get_file_content.handle(
+            client, {"project": "123", "file_path": "kernel.cu"}
+        )
+        assert result["is_binary"] is False
+        assert result["language"] == "cuda"
+
+    @pytest.mark.asyncio
+    async def test_unknown_source_extension_treated_as_text(self, client, httpx_mock):
+        httpx_mock.add_response(json={"default_branch": "main"})
+        httpx_mock.add_response(
+            json=make_file_response("pub fn main() void {}", "main.zig")
+        )
+        result = await get_file_content.handle(
+            client, {"project": "123", "file_path": "main.zig"}
+        )
+        assert result["is_binary"] is False
+        assert "pub fn main()" in result["content"]
+
+    @pytest.mark.asyncio
+    async def test_detects_binary_content_via_nul_byte(self, client, httpx_mock):
+        import base64
+
+        httpx_mock.add_response(json={"default_branch": "main"})
+        # Raw bytes containing NUL character
+        raw = b"some data\x00more binary data"
+        httpx_mock.add_response(
+            json={
+                "file_name": "data.binblob",
+                "file_path": "data.binblob",
+                "size": len(raw),
+                "encoding": "base64",
+                "content": base64.b64encode(raw).decode("ascii"),
+                "ref": "main",
+                "last_commit_id": "abc123",
+                "content_sha256": "deadbeef",
+            }
+        )
+        result = await get_file_content.handle(
+            client, {"project": "123", "file_path": "data.binblob"}
+        )
+        assert result["is_binary"] is True
+        assert "Binary file" in result["content"]
+
+    @pytest.mark.asyncio
+    async def test_invalid_utf8_treated_as_binary(self, client, httpx_mock):
+        import base64
+
+        httpx_mock.add_response(json={"default_branch": "main"})
+        # Invalid UTF-8 without NUL byte
+        raw = b"\xff\xfe\xfa\xfb"
+        httpx_mock.add_response(
+            json={
+                "file_name": "invalid_utf8.dat",
+                "file_path": "invalid_utf8.dat",
+                "size": len(raw),
+                "encoding": "base64",
+                "content": base64.b64encode(raw).decode("ascii"),
+                "ref": "main",
+                "last_commit_id": "abc123",
+                "content_sha256": "deadbeef",
+            }
+        )
+        result = await get_file_content.handle(
+            client, {"project": "123", "file_path": "invalid_utf8.dat"}
+        )
+        assert result["is_binary"] is True
+        assert "failed to decode as UTF-8" in result["content"]
+
+    @pytest.mark.asyncio
+    async def test_utf8_with_bom_is_decoded_cleanly(self, client, httpx_mock):
+        import base64
+
+        httpx_mock.add_response(json={"default_branch": "main"})
+        raw = b"\xef\xbb\xbf# Hello World\n"
+        httpx_mock.add_response(
+            json={
+                "file_name": "script.py",
+                "file_path": "script.py",
+                "size": len(raw),
+                "encoding": "base64",
+                "content": base64.b64encode(raw).decode("ascii"),
+                "ref": "main",
+                "last_commit_id": "abc123",
+                "content_sha256": "deadbeef",
+            }
+        )
+        result = await get_file_content.handle(
+            client, {"project": "123", "file_path": "script.py"}
+        )
+        assert result["is_binary"] is False
+        assert result["content"] == "# Hello World\n"
+
+    @pytest.mark.asyncio
     async def test_raises_value_error_when_file_path_empty(self, client):
         with pytest.raises(ValueError, match="file_path"):
             await get_file_content.handle(client, {"project": "123", "file_path": ""})

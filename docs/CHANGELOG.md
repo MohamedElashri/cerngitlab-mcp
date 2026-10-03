@@ -4,6 +4,21 @@ All notable changes to this project will be documented in this file.
 
 
 
+## [0.3.1] - 2026-10-03
+
+### Changed
+- **Git-Style Content-Based Binary Detection**: Replaced the fragile extension allowlist (`_TEXT_EXTENSIONS`) and legacy MIME-type guessing in `get_file_content` with standard Git-style binary detection:
+  - Files are treated as text candidates by default.
+  - Fast-path rejection for unambiguous binary extensions (`.root`, `.png`, `.zip`, `.so`, `.onnx`, etc.).
+  - Content sniffing on decoded bytes: files containing NUL characters (`\x00`) in the first 8,000 bytes or failing UTF-8 decoding are flagged as binary.
+  - Source code files across all languages (e.g. `.cu`, `.cuh`, `.cuda`, `.zig`, `.nim`, etc.) are now fully fetched without requiring hardcoded extension allowlists.
+
+### Fixed
+- **CUDA Source Files**: Fixed an issue where CUDA source files (`.cu`) were classified as binary (`application/cu-seeme`) by `mimetypes` and could not be fetched whole.
+- **Syntax Highlighting**: Added syntax highlighting hints for CUDA (`.cu`, `.cuh`, `.cuda`).
+- **Code Search Fallback**: Added CUDA extensions (`.cu`, `.cuh`, `.cuda`) to `search_code` fallback text extensions.
+- **Issue Search**: Added `id` and `iid` fields to `search_issues` response items so clients can reference issues by their project issue number.
+
 ## [0.3.0] - 2026-08-25
 
 ### Added

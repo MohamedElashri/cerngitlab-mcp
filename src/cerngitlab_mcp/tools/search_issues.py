@@ -91,6 +91,8 @@ async def handle(client: GitLabClient, arguments: dict) -> dict[str, Any]:
     for issue in results:
         formatted_results.append(
             {
+                "id": issue.get("id"),
+                "iid": issue.get("iid"),
                 "title": issue.get("title"),
                 "description_snippet": (issue.get("description") or "")[:200],
                 "state": issue.get("state"),
