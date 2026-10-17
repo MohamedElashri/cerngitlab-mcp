@@ -11,7 +11,7 @@
       "kind": "github-action",
       "logical_ref": "v7",
       "pinned_sha": "3d3c42e5aac5ba805825da76410c181273ba90b1",
-      "resolved_at": "2026-10-03T10:09:22Z"
+      "resolved_at": "2026-10-17T16:09:27Z"
     },
     {
       "file": ".github/workflows/ci.yml",
@@ -20,10 +20,10 @@
       "repo": "setup-uv",
       "path": "",
       "kind": "github-action",
-      "logical_ref": "v10.2.0",
-      "pinned_sha": "c18668ad3cf93ea998bef934396af7bb5c839dc7",
-      "resolved_at": "2026-10-03T10:09:22Z",
-      "timestamp": "2026-09-21T13:15:15Z",
+      "logical_ref": "v10.3.0",
+      "pinned_sha": "1c37ad07a6a961277cf70c0d37d6f313000f5884",
+      "resolved_at": "2026-10-17T16:09:27Z",
+      "timestamp": "2026-10-09T20:41:00Z",
       "timestamp_source": "release"
     },
     {
@@ -35,7 +35,7 @@
       "kind": "github-action",
       "logical_ref": "v7",
       "pinned_sha": "3d3c42e5aac5ba805825da76410c181273ba90b1",
-      "resolved_at": "2026-10-03T10:09:22Z"
+      "resolved_at": "2026-10-17T16:09:27Z"
     },
     {
       "file": ".github/workflows/ci.yml",
@@ -44,10 +44,10 @@
       "repo": "setup-uv",
       "path": "",
       "kind": "github-action",
-      "logical_ref": "v10.2.0",
-      "pinned_sha": "c18668ad3cf93ea998bef934396af7bb5c839dc7",
-      "resolved_at": "2026-10-03T10:09:22Z",
-      "timestamp": "2026-09-21T13:15:15Z",
+      "logical_ref": "v10.3.0",
+      "pinned_sha": "1c37ad07a6a961277cf70c0d37d6f313000f5884",
+      "resolved_at": "2026-10-17T16:09:27Z",
+      "timestamp": "2026-10-09T20:41:00Z",
       "timestamp_source": "release"
     },
     {
@@ -59,7 +59,7 @@
       "kind": "github-action",
       "logical_ref": "v7",
       "pinned_sha": "3d3c42e5aac5ba805825da76410c181273ba90b1",
-      "resolved_at": "2026-10-03T10:09:22Z"
+      "resolved_at": "2026-10-17T16:09:27Z"
     },
     {
       "file": ".github/workflows/release.yml",
@@ -68,10 +68,10 @@
       "repo": "setup-uv",
       "path": "",
       "kind": "github-action",
-      "logical_ref": "v10.2.0",
-      "pinned_sha": "c18668ad3cf93ea998bef934396af7bb5c839dc7",
-      "resolved_at": "2026-10-03T10:09:22Z",
-      "timestamp": "2026-09-21T13:15:15Z",
+      "logical_ref": "v10.3.0",
+      "pinned_sha": "1c37ad07a6a961277cf70c0d37d6f313000f5884",
+      "resolved_at": "2026-10-17T16:09:27Z",
+      "timestamp": "2026-10-09T20:41:00Z",
       "timestamp_source": "release"
     },
     {
@@ -81,9 +81,11 @@
       "repo": "upload-artifact",
       "path": "",
       "kind": "github-action",
-      "logical_ref": "v7",
-      "pinned_sha": "043fb46d1a93c77aae656e7c1c64a875d1fc6a0a",
-      "resolved_at": "2026-10-03T10:09:22Z"
+      "logical_ref": "v7.0.2",
+      "pinned_sha": "cf430e030ddbb5b0abf93d22962f4752f3646cd9",
+      "resolved_at": "2026-10-17T16:09:27Z",
+      "timestamp": "2026-10-07T10:08:14Z",
+      "timestamp_source": "release"
     },
     {
       "file": ".github/workflows/release.yml",
@@ -94,7 +96,7 @@
       "kind": "github-action",
       "logical_ref": "v7",
       "pinned_sha": "3d3c42e5aac5ba805825da76410c181273ba90b1",
-      "resolved_at": "2026-10-03T10:09:22Z"
+      "resolved_at": "2026-10-17T16:09:27Z"
     },
     {
       "file": ".github/workflows/release.yml",
@@ -105,9 +107,7 @@
       "kind": "github-action",
       "logical_ref": "v3.0.3",
       "pinned_sha": "efb35369e0ad2afab669f228072c1b0d510eae64",
-      "resolved_at": "2026-10-03T10:09:22Z",
-      "timestamp": "2026-08-30T00:30:08Z",
-      "timestamp_source": "release"
+      "resolved_at": "2026-10-17T16:09:27Z"
     },
     {
       "file": ".github/workflows/release.yml",
@@ -116,9 +116,11 @@
       "repo": "download-artifact",
       "path": "",
       "kind": "github-action",
-      "logical_ref": "v8",
-      "pinned_sha": "3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c",
-      "resolved_at": "2026-10-03T10:09:22Z"
+      "logical_ref": "v8.0.2",
+      "pinned_sha": "9000827ccba6bdab643e8b6fd33ac0654aef8333",
+      "resolved_at": "2026-10-17T16:09:27Z",
+      "timestamp": "2026-10-07T10:09:51Z",
+      "timestamp_source": "release"
     },
     {
       "file": ".github/workflows/release.yml",
@@ -129,7 +131,7 @@
       "kind": "github-action",
       "logical_ref": "v1.14.2",
       "pinned_sha": "dc37677b2e1c63e2034f94d8a5b11f265b73ba33",
-      "resolved_at": "2026-10-03T10:09:22Z"
+      "resolved_at": "2026-10-17T16:09:27Z"
     },
     {
       "file": ".github/workflows/release.yml",
@@ -140,7 +142,7 @@
       "kind": "github-action",
       "logical_ref": "v7",
       "pinned_sha": "3d3c42e5aac5ba805825da76410c181273ba90b1",
-      "resolved_at": "2026-10-03T10:09:22Z"
+      "resolved_at": "2026-10-17T16:09:27Z"
     },
     {
       "file": ".github/workflows/release.yml",
@@ -149,10 +151,10 @@
       "repo": "setup-uv",
       "path": "",
       "kind": "github-action",
-      "logical_ref": "v10.2.0",
-      "pinned_sha": "c18668ad3cf93ea998bef934396af7bb5c839dc7",
-      "resolved_at": "2026-10-03T10:09:22Z",
-      "timestamp": "2026-09-21T13:15:15Z",
+      "logical_ref": "v10.3.0",
+      "pinned_sha": "1c37ad07a6a961277cf70c0d37d6f313000f5884",
+      "resolved_at": "2026-10-17T16:09:27Z",
+      "timestamp": "2026-10-09T20:41:00Z",
       "timestamp_source": "release"
     }
   ]
