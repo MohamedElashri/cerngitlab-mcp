@@ -75,6 +75,10 @@ class Settings(BaseSettings):
         default="http://localhost:8000",
         description="Base URL of this MCP server (for OAuth callbacks)",
     )
+    http_allowed_origins: list[str] = Field(
+        default_factory=list,
+        description="Additional browser origins allowed to access HTTP mode (JSON array)",
+    )
     session_storage_path: str = Field(
         default="/tmp/cerngitlab/sessions",
         description="Directory for OAuth sessions",

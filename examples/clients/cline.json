@@ -1,0 +1,14 @@
+{
+  "mcpServers": {
+    "cerngitlab": {
+      "command": "uvx",
+      "args": [
+        "cerngitlab-mcp",
+        "--mode",
+        "stdio"
+      ],
+      "disabled": false,
+      "autoApprove": []
+    }
+  }
+}

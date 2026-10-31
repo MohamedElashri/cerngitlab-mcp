@@ -20,11 +20,9 @@
       "repo": "setup-uv",
       "path": "",
       "kind": "github-action",
-      "logical_ref": "v10.3.0",
-      "pinned_sha": "1c37ad07a6a961277cf70c0d37d6f313000f5884",
-      "resolved_at": "2026-10-17T16:09:27Z",
-      "timestamp": "2026-10-09T20:41:00Z",
-      "timestamp_source": "release"
+      "logical_ref": "v10.3.3",
+      "pinned_sha": "68559e99cc807c1eb7e9238fd43a15bba460eec2",
+      "resolved_at": "2026-10-31T21:06:20Z"
     },
     {
       "file": ".github/workflows/ci.yml",
@@ -44,11 +42,9 @@
       "repo": "setup-uv",
       "path": "",
       "kind": "github-action",
-      "logical_ref": "v10.3.0",
-      "pinned_sha": "1c37ad07a6a961277cf70c0d37d6f313000f5884",
-      "resolved_at": "2026-10-17T16:09:27Z",
-      "timestamp": "2026-10-09T20:41:00Z",
-      "timestamp_source": "release"
+      "logical_ref": "v10.3.3",
+      "pinned_sha": "68559e99cc807c1eb7e9238fd43a15bba460eec2",
+      "resolved_at": "2026-10-31T21:06:20Z"
     },
     {
       "file": ".github/workflows/release.yml",
@@ -68,11 +64,9 @@
       "repo": "setup-uv",
       "path": "",
       "kind": "github-action",
-      "logical_ref": "v10.3.0",
-      "pinned_sha": "1c37ad07a6a961277cf70c0d37d6f313000f5884",
-      "resolved_at": "2026-10-17T16:09:27Z",
-      "timestamp": "2026-10-09T20:41:00Z",
-      "timestamp_source": "release"
+      "logical_ref": "v10.3.3",
+      "pinned_sha": "68559e99cc807c1eb7e9238fd43a15bba460eec2",
+      "resolved_at": "2026-10-31T21:06:20Z"
     },
     {
       "file": ".github/workflows/release.yml",
@@ -129,9 +123,9 @@
       "repo": "gh-action-pypi-publish",
       "path": "",
       "kind": "github-action",
-      "logical_ref": "v1.14.2",
-      "pinned_sha": "dc37677b2e1c63e2034f94d8a5b11f265b73ba33",
-      "resolved_at": "2026-10-17T16:09:27Z"
+      "logical_ref": "v1.14.3",
+      "pinned_sha": "7245906fb61fa33a13554f9d5fb856fe61758086",
+      "resolved_at": "2026-10-31T21:06:20Z"
     },
     {
       "file": ".github/workflows/release.yml",
@@ -151,11 +145,9 @@
       "repo": "setup-uv",
       "path": "",
       "kind": "github-action",
-      "logical_ref": "v10.3.0",
-      "pinned_sha": "1c37ad07a6a961277cf70c0d37d6f313000f5884",
-      "resolved_at": "2026-10-17T16:09:27Z",
-      "timestamp": "2026-10-09T20:41:00Z",
-      "timestamp_source": "release"
+      "logical_ref": "v10.3.3",
+      "pinned_sha": "68559e99cc807c1eb7e9238fd43a15bba460eec2",
+      "resolved_at": "2026-10-31T21:06:20Z"
     }
   ]
 }

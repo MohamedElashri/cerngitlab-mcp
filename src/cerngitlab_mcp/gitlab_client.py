@@ -69,7 +69,9 @@ class GitLabClient:
             "User-Agent": f"cerngitlab-mcp/{__version__}",
         }
         if self.settings.token:
-            headers["PRIVATE-TOKEN"] = self.settings.token
+            # GitLab accepts bearer auth for PATs and requires it for OAuth
+            # access tokens used by the multi-user HTTP transport.
+            headers["Authorization"] = f"Bearer {self.settings.token}"
         return headers
 
     async def _get_client(self) -> httpx.AsyncClient:

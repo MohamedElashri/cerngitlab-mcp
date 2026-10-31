@@ -130,7 +130,8 @@ TOOL_DEFINITION = Tool(
         "Retrieve the content of a specific file from a CERN GitLab repository. "
         "Returns the file content along with metadata like size, encoding, and "
         "a language hint for syntax highlighting. Binary files are detected and "
-        "reported without attempting to decode them."
+        "reported without attempting to decode them. Use start_line/end_line "
+        "for focused reads of large source files; lines are 1-based and inclusive."
     ),
     input_schema={
         "type": "object",
@@ -149,6 +150,17 @@ TOOL_DEFINITION = Tool(
             "ref": {
                 "type": "string",
                 "description": "Branch name, tag, or commit SHA (default: project's default branch)",
+            },
+            "start_line": {
+                "type": "integer",
+                "minimum": 1,
+                "default": 1,
+                "description": "First line to read (1-based)",
+            },
+            "end_line": {
+                "type": ["integer", "null"],
+                "minimum": 1,
+                "description": "Last line to read, inclusive; omit for end of file",
             },
         },
         "required": ["project", "file_path"],
@@ -199,6 +211,23 @@ async def handle(client: GitLabClient, arguments: dict) -> dict[str, Any]:
     file_path = arguments.get("file_path", "").strip()
     if not file_path:
         raise ValueError("'file_path' parameter is required")
+
+    start_line = arguments.get("start_line", 1)
+    end_line = arguments.get("end_line")
+    if (
+        isinstance(start_line, bool)
+        or not isinstance(start_line, int)
+        or start_line < 1
+    ):
+        raise ValueError("'start_line' must be a positive integer")
+    if end_line is not None and (
+        isinstance(end_line, bool)
+        or not isinstance(end_line, int)
+        or end_line < start_line
+    ):
+        raise ValueError(
+            "'end_line' must be an integer greater than or equal to start_line"
+        )
 
     encoded_project = encode_project(project)
     encoded_path = quote(file_path, safe="")
@@ -263,4 +292,13 @@ async def handle(client: GitLabClient, arguments: dict) -> dict[str, Any]:
         result["content"] = content_encoded
 
     result["language"] = _get_language_hint(file_name)
+    if start_line != 1 or end_line is not None:
+        lines = result["content"].splitlines(keepends=True)
+        result["content"] = "".join(lines[start_line - 1 : end_line])
+        result["total_lines"] = len(lines)
+        result["start_line"] = start_line
+        result["end_line"] = min(end_line or len(lines), len(lines))
+        result["is_partial"] = start_line > 1 or (
+            end_line is not None and end_line < len(lines)
+        )
     return result
