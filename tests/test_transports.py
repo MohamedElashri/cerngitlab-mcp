@@ -40,7 +40,7 @@ class TestStdioTransport:
     @patch("cerngitlab_mcp.transports.stdio.setup_logging")
     async def test_run(self, mock_setup_logging, stdio_transport):
         """Test stdio transport run method."""
-        # Mock the GitLab connectivity check
+        # Startup must not make network calls before protocol discovery.
         mock_client = AsyncMock()
         mock_client.test_connection.return_value = {
             "status": "connected",
@@ -57,8 +57,7 @@ class TestStdioTransport:
                 stdio_transport.settings.log_level
             )
 
-            # Verify GitLab connectivity check
-            mock_client.test_connection.assert_called_once()
+            mock_client.test_connection.assert_not_called()
 
             # Verify the MCP server was started over stdio
             mock_mcp.run_stdio_async.assert_called_once()
@@ -93,6 +92,10 @@ class TestUserSession:
         assert isinstance(user_session.core, McpServerCore)
         assert user_session.mcp is not None
         assert user_session.mcp_asgi is not None
+        assert (
+            user_session.gitlab_client._build_headers()["Authorization"]
+            == "Bearer test-token"
+        )
 
     @pytest.mark.asyncio
     async def test_close(self, user_session):
@@ -100,3 +103,29 @@ class TestUserSession:
         user_session.core.close = AsyncMock()
         await user_session.close()
         user_session.core.close.assert_called_once()
+
+    @pytest.mark.asyncio
+    async def test_concurrent_sessions_and_token_rotation(
+        self, base_settings, tmp_path
+    ):
+        import asyncio
+        from cerngitlab_mcp.transports.http import HttpTransport
+
+        base_settings.session_storage_path = str(tmp_path)
+        transport = HttpTransport(base_settings)
+        try:
+            first, second = await asyncio.gather(
+                transport.get_user_session("alice", "old-token"),
+                transport.get_user_session("alice", "old-token"),
+            )
+            assert first is second
+            old_task = first._manager_task
+            rotated = await transport.get_user_session("alice", "new-token")
+            assert old_task.done()
+            assert rotated is not first
+            assert rotated.settings.token == "new-token"
+            bob = await transport.get_user_session("bob", "bob-token")
+            assert bob.gitlab_client is not rotated.gitlab_client
+        finally:
+            for username in list(transport.user_sessions):
+                await transport.close_session(username)

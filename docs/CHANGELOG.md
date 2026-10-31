@@ -2,6 +2,46 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.4.0] - 2026-10-31
+
+### Changed
+- Updated MCP SDK to 2.3.0 and refreshed all runtime/development dependency
+  floors and the lockfile, retaining Python 3.10 support with compatible
+  dependency versions where newer releases require Python 3.11.
+- Updated the uv build backend, pre-commit hooks, and GitHub Actions pins;
+  switched Dependabot to the uv ecosystem so it maintains `uv.lock`.
+- Expanded server instructions for tool search and repository workflows;
+  all tools explicitly declare read-only, non-destructive, idempotent,
+  open-world behavior. Discovery carries a five-minute private cache hint.
+- Added optional inclusive line ranges to `get_file_content` without changing
+  its default full-file output.
+- Added practical MCP client setup instructions and ready-to-edit configurations
+  for Codex, Claude Code/Desktop, VS Code, Copilot CLI, Cursor, Zed,
+  Antigravity, Qwen Code, Pi/OMP, OpenCode, Cline, Roo Code, and Continue.
+
+### Fixed
+- GitLab API and business validation failures now return model-visible
+  `isError` tool results, as specified by MCP, instead of protocol errors.
+- Stdio startup no longer waits on a network connectivity check.
+- Server identity now reports the package version consistently.
+- HTTP authentication includes protected resource metadata and bearer
+  challenges. Missing GitLab authorization returns 403 on `/mcp`.
+- Corrected per-user SDK task-group ownership, concurrent session creation,
+  shutdown cleanup, and replacement of clients after token rotation.
+- HTTP Host/Origin validation uses the configured public origin. CORS no
+  longer allows arbitrary origins with credentials.
+- OAuth state is now opaque, expiring, server-verified, and single-use;
+  exchanges use PKCE S256. Fixed timezone handling and signing-key selection
+  for CERN JWTs. Escaped OAuth callback errors in HTML.
+- GitLab API requests use bearer authentication for both OAuth tokens and PATs.
+- CI installs locked dependencies and uses a defined Python version for
+  the build job. Its test matrix explicitly selects each interpreter rather
+  than allowing `.python-version` to select Python 3.13 for every job.
+
+### Tests
+- Added modern/legacy stdio and authenticated HTTP protocol checks, tool
+  annotations and caching assertions, file ranges, session rotation/isolation,
+  and OAuth PKCE/state/JWT signing-key regression coverage.
 
 
 ## [0.3.1] - 2026-10-03

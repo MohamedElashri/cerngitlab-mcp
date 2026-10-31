@@ -1,0 +1,7 @@
+name: CERN GitLab
+version: 1.0.0
+schema: v1
+mcpServers:
+  - name: cerngitlab
+    command: uvx
+    args: [cerngitlab-mcp, --mode, stdio]

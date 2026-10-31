@@ -37,25 +37,8 @@ class StdioTransport:
         logger.info("GitLab URL: %s", self.settings.gitlab_url)
         logger.info("Authenticated: %s", bool(self.settings.token))
 
-        # Non-blocking connectivity check — log result but never fail startup
-        try:
-            conn_info = await self.gitlab_client.test_connection()
-            if conn_info["status"] == "connected":
-                logger.info(
-                    "Connected to GitLab %s (revision: %s)",
-                    conn_info.get("version", "?"),
-                    conn_info.get("revision", "?"),
-                )
-            else:
-                logger.warning(
-                    "GitLab connectivity check: %s — server will start anyway",
-                    conn_info.get("error", "unknown"),
-                )
-        except Exception as exc:
-            logger.warning(
-                "GitLab connectivity check failed: %s — server will start anyway", exc
-            )
-
+        # Discovery must work immediately, including offline. Connectivity is
+        # checked on demand by test_connectivity, never on the startup path.
         try:
             await self.mcp.run_stdio_async()
         finally:

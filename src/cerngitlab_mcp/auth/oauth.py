@@ -7,6 +7,7 @@ import hashlib
 import base64
 from typing import Optional, Dict, Any
 from datetime import datetime, timedelta, timezone
+from urllib.parse import urlencode
 import logging
 
 from ..config import Settings
@@ -26,6 +27,8 @@ class OAuthService:
         self._jwks_cache: Optional[Dict] = None
         self._jwks_cache_expiry: Optional[datetime] = None
         self._session_store = None
+        # Single-use state and PKCE verifiers stay on the server, never in URLs.
+        self._pending_states: dict[str, tuple[str, datetime, str]] = {}
 
     def set_session_store(self, session_store):
         """Set the session store reference."""
@@ -46,7 +49,9 @@ class OAuthService:
         if not user_info:
             raise AuthenticationError("Invalid CERN SSO token")
 
-        cern_username = user_info["preferred_username"]
+        cern_username = user_info.get("preferred_username")
+        if not isinstance(cern_username, str) or not cern_username:
+            raise AuthenticationError("CERN SSO token has no username")
 
         # Check for active OAuth session
         oauth_token = None
@@ -64,13 +69,27 @@ class OAuthService:
     async def _validate_cern_token(self, token: str) -> Optional[Dict[str, Any]]:
         """Validate CERN SSO JWT token."""
         try:
+            if not self.settings.cern_client_id:
+                raise AuthenticationError("CERN SSO client ID is not configured")
+            kid = jwt.get_unverified_header(token).get("kid")
+            if not kid:
+                raise AuthenticationError("CERN SSO token has no signing key ID")
             jwks = await self._get_cern_jwks()
+            key = next((k for k in jwks["keys"] if k.get("kid") == kid), None)
+            if key is None:
+                # A new key ID may indicate normal CERN signing-key rotation.
+                self._jwks_cache_expiry = None
+                jwks = await self._get_cern_jwks()
+                key = next((k for k in jwks["keys"] if k.get("kid") == kid), None)
+            if key is None:
+                raise AuthenticationError("Unknown CERN SSO signing key")
             payload = jwt.decode(
                 token,
-                jwt.PyJWK.from_dict(jwks["keys"][0]).key,
+                jwt.PyJWK.from_dict(key).key,
                 algorithms=["RS256"],
                 audience=self.settings.cern_client_id,
                 issuer=self.cern_auth_url,
+                options={"require": ["exp", "iss", "aud"]},
             )
             return payload
         except jwt.InvalidTokenError as e:
@@ -106,6 +125,12 @@ class OAuthService:
     async def _generate_oauth_url(self, cern_username: str) -> str:
         """Generate GitLab OAuth URL."""
         state = self._generate_secure_state(cern_username)
+        verifier = self._pending_states[state][2]
+        challenge = (
+            base64.urlsafe_b64encode(hashlib.sha256(verifier.encode("ascii")).digest())
+            .rstrip(b"=")
+            .decode("ascii")
+        )
 
         params = {
             "client_id": self.settings.gitlab_oauth_client_id,
@@ -113,53 +138,47 @@ class OAuthService:
             "response_type": "code",
             "scope": "read_api read_repository read_user",
             "state": state,
+            "code_challenge": challenge,
+            "code_challenge_method": "S256",
         }
 
-        query_string = "&".join([f"{k}={v}" for k, v in params.items()])
+        query_string = urlencode(params)
         return f"{self.gitlab_oauth_url}/authorize?{query_string}"
 
     def _generate_secure_state(self, username: str) -> str:
         """Generate secure state parameter for OAuth."""
-        # Create a secure state that includes username and timestamp
-        timestamp = str(int(datetime.now(timezone.utc).timestamp()))
-        nonce = secrets.token_urlsafe(16)
-        state_data = f"{username}:{timestamp}:{nonce}"
-
-        # Hash it for security
-        state_hash = hashlib.sha256(state_data.encode()).hexdigest()
-
-        # Encode for URL safety
-        return base64.urlsafe_b64encode(
-            f"{username}:{timestamp}:{state_hash}".encode()
-        ).decode()
+        now = datetime.now(timezone.utc)
+        self._pending_states = {
+            state: entry
+            for state, entry in self._pending_states.items()
+            if entry[1] > now
+        }
+        state = secrets.token_urlsafe(32)
+        self._pending_states[state] = (
+            username,
+            now + timedelta(minutes=10),
+            secrets.token_urlsafe(64),
+        )
+        return state
 
     def _validate_state(self, state: str) -> Optional[str]:
         """Validate OAuth state parameter and return username."""
-        try:
-            decoded = base64.urlsafe_b64decode(state.encode()).decode()
-            parts = decoded.split(":")
-            if len(parts) != 3:
-                return None
-
-            username, timestamp, received_hash = parts
-
-            # Check timestamp (allow 10 minutes)
-            state_time = datetime.fromtimestamp(int(timestamp))
-            if datetime.now(timezone.utc) - state_time > timedelta(minutes=10):
-                logger.warning(f"OAuth state expired for user {username}")
-                return None
-
-            return username
-
-        except Exception as e:
-            logger.error(f"State validation failed: {e}")
+        entry = self._pending_states.get(state)
+        if entry is None:
             return None
+        username, expires_at, _ = entry
+        if datetime.now(timezone.utc) >= expires_at:
+            self._pending_states.pop(state, None)
+            return None
+        return username
 
     async def exchange_oauth_code(self, code: str, state: str) -> tuple[str, str]:
         """Exchange OAuth code for access token."""
         cern_username = self._validate_state(state)
         if not cern_username:
             raise AuthenticationError("Invalid OAuth state")
+        # Consume before network I/O to prevent concurrent callback replays.
+        _, _, verifier = self._pending_states.pop(state)
 
         try:
             async with httpx.AsyncClient() as client:
@@ -171,14 +190,13 @@ class OAuthService:
                         "code": code,
                         "grant_type": "authorization_code",
                         "redirect_uri": f"{self.settings.server_base_url}/oauth/callback",
+                        "code_verifier": verifier,
                     },
                     timeout=30.0,
                 )
 
             if response.status_code != 200:
-                logger.error(
-                    f"OAuth token exchange failed: {response.status_code} - {response.text}"
-                )
+                logger.error(f"OAuth token exchange failed: {response.status_code}")
                 raise AuthenticationError("OAuth token exchange failed")
 
             token_data = response.json()

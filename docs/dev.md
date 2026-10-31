@@ -56,6 +56,12 @@ Retrieve file content with binary detection and syntax highlighting hints.
 | `project` | string | yes | Numeric ID or path |
 | `file_path` | string | yes | Path within repository |
 | `ref` | string | no | Branch/tag/commit |
+| `start_line` | integer | no | First line, 1-based (default: 1) |
+| `end_line` | integer | no | Last line, inclusive (default: end of file) |
+
+Line ranges add `total_lines`, `start_line`, `end_line`, and `is_partial` to the
+result. Omitting the range preserves full-file output. See
+[MCP client integration](guides/llm_integration.md) for client setup and examples.
 
 #### `get_project_readme`
 Get the README file, automatically trying common filenames (README.md, .rst, .txt, etc.).
@@ -155,11 +161,16 @@ Test connection to the CERN GitLab instance. No parameters required.
 
 ## Development Setup
 
+Use a current uv release. Packaging is verified with uv 0.13.6 and uv_build
+0.13.6. The older uv 0.9.26 frontend can install the dependencies but fails
+when rebuilding a wheel from the new backend's source archive. If needed,
+use `uv run --with uv==0.13.6 uv build` for a temporary current build frontend.
+
 ```bash
 # Clone and install dev dependencies
 git clone https://github.com/MohamedElashri/cerngitlab-mcp
 cd cerngitlab-mcp
-uv sync
+uv sync --locked --all-groups
 
 # Install pre-commit hooks
 uv run pre-commit install
@@ -189,7 +200,7 @@ uv run pre-commit install
 uv run pre-commit run --all-files
 
 # Run specific hook
-uv run pre-commit run ruff --all-files
+uv run pre-commit run ruff-check --all-files
 ```
 
 **Available hooks:**
@@ -212,7 +223,19 @@ git commit --no-verify -m "commit message"
 
 ## Releasing
 
-1. Update version in `pyproject.toml` and `src/cerngitlab_mcp/__init__.py`
-2. Commit and push to `main`
-3. Tag the release: `git tag v0.1.0 && git push origin v0.1.0`
-4. The GitHub Actions release workflow will automatically build and publish to PyPI
+1. Update the version in `pyproject.toml` and `src/cerngitlab_mcp/__init__.py`,
+   then run `uv lock` to update the package entry in `uv.lock`.
+2. Add the version and release date to `docs/CHANGELOG.md`.
+3. Run `uv sync --locked --all-groups`, `uv run pytest -v`,
+   `uv run ruff check .`, and `uv build` with a current uv frontend.
+4. Check the wheel and source archive metadata against the intended version.
+5. Commit and push the release changes, then tag the release. For version 0.4.0:
+
+   ```bash
+   git tag v0.4.0
+   git push origin v0.4.0
+   ```
+
+The tag triggers `.github/workflows/release.yml`, which verifies the package
+version, runs tests, builds distributions, publishes to PyPI using the configured
+trusted publisher, and creates the GitHub release.

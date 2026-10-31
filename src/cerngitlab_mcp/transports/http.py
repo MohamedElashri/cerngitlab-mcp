@@ -13,17 +13,20 @@ Exposes two surfaces:
 import asyncio
 import json as jsonlib
 import logging
-from contextlib import AsyncExitStack, asynccontextmanager
+from contextlib import asynccontextmanager
+from html import escape
 from typing import Any, Dict
+from urllib.parse import urlsplit
 
 from fastapi import FastAPI, Header, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
 from starlette.routing import Route
+from mcp.server.transport_security import TransportSecuritySettings
 import uvicorn
 
 from ..config import Settings
-from ..core import SERVER_VERSION, McpServerCore, build_mcp_server
+from ..core import PROTOCOL_VERSION, SERVER_VERSION, McpServerCore, build_mcp_server
 from ..gitlab_client import GitLabClient
 from ..logging import setup_logging
 from ..models import McpRequest, McpResponse
@@ -48,17 +51,7 @@ class UserSession:
         self.user_id = user_id
 
         # Create user-specific settings with their token
-        self.settings = Settings(
-            gitlab_url=base_settings.gitlab_url,
-            token=gitlab_token,
-            timeout=base_settings.timeout,
-            max_retries=base_settings.max_retries,
-            rate_limit_per_minute=base_settings.rate_limit_per_minute,
-            default_per_page=base_settings.default_per_page,
-            max_per_page=base_settings.max_per_page,
-            log_level=base_settings.log_level,
-            default_ref=base_settings.default_ref,
-        )
+        self.settings = base_settings.model_copy(update={"token": gitlab_token})
 
         self.gitlab_client = GitLabClient(self.settings)
 
@@ -66,9 +59,45 @@ class UserSession:
         self.mcp = build_mcp_server(self.settings, self.gitlab_client)
         # Creating the app wires up the underlying StreamableHTTPSessionManager;
         # requests are dispatched straight into its ASGI entry point.
-        self.mcp.streamable_http_app(stateless_http=True)
+        public_url = urlsplit(base_settings.server_base_url)
+        self.mcp.streamable_http_app(
+            stateless_http=True,
+            json_response=True,
+            transport_security=TransportSecuritySettings(
+                allowed_hosts=[public_url.netloc],
+                allowed_origins=[
+                    f"{public_url.scheme}://{public_url.netloc}",
+                    *base_settings.http_allowed_origins,
+                ],
+            ),
+        )
         self._session_manager = self.mcp.session_manager
         self.mcp_asgi = self._session_manager.asgi_app
+        self._stop = asyncio.Event()
+        self._manager_task: asyncio.Task | None = None
+
+    async def start(self) -> None:
+        """Keep the SDK task group in one owning task for its entire lifetime."""
+        ready = asyncio.get_running_loop().create_future()
+
+        async def serve() -> None:
+            try:
+                async with self._session_manager.run():
+                    ready.set_result(None)
+                    await self._stop.wait()
+            except BaseException as exc:
+                if not ready.done():
+                    ready.set_exception(exc)
+                raise
+
+        self._manager_task = asyncio.create_task(serve())
+        try:
+            await ready
+        except BaseException:
+            self._manager_task.cancel()
+            await asyncio.gather(self._manager_task, return_exceptions=True)
+            await self.gitlab_client.close()
+            raise
 
     @property
     def core(self) -> McpServerCore:
@@ -78,7 +107,12 @@ class UserSession:
 
     async def close(self):
         """Clean up session resources."""
-        await self.core.close()
+        try:
+            if self._manager_task is not None:
+                self._stop.set()
+                await self._manager_task
+        finally:
+            await self.core.close()
 
 
 class McpHttpDispatcher:
@@ -101,7 +135,12 @@ class McpHttpDispatcher:
         try:
             cern_token = self.transport._extract_token(auth_header)
         except HTTPException as exc:
-            await self._send_json(send, exc.status_code, {"error": exc.detail})
+            await self._send_json(
+                send,
+                exc.status_code,
+                {"error": exc.detail},
+                self.transport.bearer_challenge,
+            )
             return
 
         try:
@@ -114,7 +153,7 @@ class McpHttpDispatcher:
         except AuthorizationRequiredError as e:
             await self._send_json(
                 send,
-                202,
+                403,
                 {
                     "error": "authorization_required",
                     "username": e.username,
@@ -124,26 +163,37 @@ class McpHttpDispatcher:
             )
             return
         except AuthenticationError:
-            await self._send_json(send, 401, {"error": "Authentication failed"})
+            await self._send_json(
+                send,
+                401,
+                {"error": "Authentication failed"},
+                self.transport.bearer_challenge,
+            )
             return
-        except Exception as exc:
+        except Exception:
             logger.exception("MCP dispatch failed")
-            await self._send_json(send, 500, {"error": f"Internal error: {exc}"})
+            await self._send_json(send, 500, {"error": "Internal server error"})
             return
 
         await session.mcp_asgi(scope, receive, send)
 
     @staticmethod
-    async def _send_json(send: Any, status: int, payload: Dict[str, Any]) -> None:
+    async def _send_json(
+        send: Any, status: int, payload: Dict[str, Any], challenge: str | None = None
+    ) -> None:
         body = jsonlib.dumps(payload).encode()
+        headers = [
+            [b"content-type", b"application/json"],
+            [b"content-length", str(len(body)).encode()],
+            [b"cache-control", b"no-store"],
+        ]
+        if challenge:
+            headers.append([b"www-authenticate", challenge.encode("latin-1")])
         await send(
             {
                 "type": "http.response.start",
                 "status": status,
-                "headers": [
-                    [b"content-type", b"application/json"],
-                    [b"content-length", str(len(body)).encode()],
-                ],
+                "headers": headers,
             }
         )
         await send({"type": "http.response.body", "body": body})
@@ -157,12 +207,17 @@ class HttpTransport:
         self.oauth_service = OAuthService(settings)
         self.session_store = SessionStore(settings)
         self.user_sessions: Dict[str, UserSession] = {}
-        self._session_exit_stacks: Dict[str, Any] = {}
+        self._sessions_lock = asyncio.Lock()
 
         # Link services
         self.oauth_service.set_session_store(self.session_store)
 
         self.app = self._create_app()
+
+    @property
+    def bearer_challenge(self) -> str:
+        base = self.settings.server_base_url.rstrip("/")
+        return f'Bearer resource_metadata="{base}/.well-known/oauth-protected-resource/mcp"'
 
     def _create_app(self) -> FastAPI:
         """Create FastAPI application."""
@@ -173,19 +228,20 @@ class HttpTransport:
             logger.info("Starting CERN GitLab MCP server (CERN SSO mode)")
             logger.info("GitLab URL: %s", self.settings.gitlab_url)
             logger.info(
-                "MCP endpoint: /mcp (Streamable HTTP, protocol %s)", SERVER_VERSION
+                "MCP endpoint: /mcp (Streamable HTTP, protocol %s)", PROTOCOL_VERSION
             )
 
             # Start periodic cleanup task
             cleanup_task = asyncio.create_task(self._periodic_cleanup())
 
-            yield
-
-            # Cleanup
-            cleanup_task.cancel()
-            for username in list(self.user_sessions):
-                await self.close_session(username)
-            logger.info("HTTP server shutdown complete")
+            try:
+                yield
+            finally:
+                cleanup_task.cancel()
+                await asyncio.gather(cleanup_task, return_exceptions=True)
+                for username in list(self.user_sessions):
+                    await self.close_session(username)
+                logger.info("HTTP server shutdown complete")
 
         app = FastAPI(
             title="CERN GitLab MCP Server",
@@ -197,10 +253,14 @@ class HttpTransport:
         # CORS middleware
         app.add_middleware(
             CORSMiddleware,
-            allow_origins=["*"],  # Configure appropriately for production
-            allow_credentials=True,
+            allow_origins=[
+                self.settings.server_base_url.rstrip("/"),
+                *self.settings.http_allowed_origins,
+            ],
+            allow_credentials=False,
             allow_methods=["GET", "POST", "DELETE"],
             allow_headers=["*"],
+            expose_headers=["WWW-Authenticate", "MCP-Protocol-Version"],
         )
 
         # MCP protocol endpoint (Streamable HTTP, protocol 2026-07-28)
@@ -218,21 +278,21 @@ class HttpTransport:
     async def get_user_session(self, username: str, oauth_token: str) -> UserSession:
         """Get or create an authenticated user session with a running
         MCP Streamable HTTP session manager."""
-        if username not in self.user_sessions:
-            session = UserSession(username, oauth_token, self.settings)
-            stack = AsyncExitStack()
-            await stack.enter_async_context(session._session_manager.run())
-            self._session_exit_stacks[username] = stack
-            self.user_sessions[username] = session
-            logger.info("Created session for user: %s", username)
-        return self.user_sessions[username]
+        async with self._sessions_lock:
+            session = self.user_sessions.get(username)
+            if session is not None and session.settings.token != oauth_token:
+                await self.close_session(username)
+                session = None
+            if session is None:
+                session = UserSession(username, oauth_token, self.settings)
+                await session.start()
+                self.user_sessions[username] = session
+                logger.info("Created session for user: %s", username)
+            return session
 
     async def close_session(self, username: str) -> None:
         """Tear down a user session and its MCP session manager."""
-        stack = self._session_exit_stacks.pop(username, None)
         session = self.user_sessions.pop(username, None)
-        if stack is not None:
-            await stack.aclose()
         if session is not None:
             await session.close()
 
@@ -246,7 +306,7 @@ class HttpTransport:
                 "version": SERVER_VERSION,
                 "auth_mode": "cern_sso_oauth",
                 "gitlab_url": self.settings.gitlab_url,
-                "protocol_version": "2026-07-28",
+                "protocol_version": PROTOCOL_VERSION,
                 "description": (
                     "Uses your existing GitLab permissions. Connect MCP clients to /mcp"
                 ),
@@ -255,6 +315,16 @@ class HttpTransport:
         @app.get("/health")
         async def health():
             return {"status": "healthy", "auth_mode": "cern_sso_oauth"}
+
+        @app.get("/.well-known/oauth-protected-resource")
+        @app.get("/.well-known/oauth-protected-resource/mcp")
+        async def protected_resource_metadata():
+            return {
+                "resource": f"{self.settings.server_base_url.rstrip('/')}/mcp",
+                "authorization_servers": [self.oauth_service.cern_auth_url],
+                "bearer_methods_supported": ["header"],
+                "resource_name": "CERN GitLab MCP Server",
+            }
 
         @app.get("/oauth/authorize")
         async def start_oauth_flow(authorization: str = Header(...)):
@@ -342,7 +412,7 @@ class HttpTransport:
                 <body>
                     <div class="container">
                         <h2 class="error">✗ Authorization Failed</h2>
-                        <p class="info">Error: {str(e)}</p>
+                        <p class="info">Error: {escape(str(e))}</p>
                         <p class="info">Please try again or contact support.</p>
                     </div>
                 </body>
@@ -432,9 +502,10 @@ class HttpTransport:
 
     def _extract_token(self, authorization: str) -> str:
         """Extract token from Authorization header."""
-        if not authorization.startswith("Bearer "):
+        parts = authorization.split()
+        if len(parts) != 2 or parts[0].lower() != "bearer":
             raise HTTPException(status_code=401, detail="Invalid authorization header")
-        return authorization[7:]
+        return parts[1]
 
     async def _periodic_cleanup(self):
         """Periodic cleanup of expired sessions."""

@@ -1,0 +1,12 @@
+{
+  "context_servers": {
+    "cerngitlab": {
+      "command": "uvx",
+      "args": [
+        "cerngitlab-mcp",
+        "--mode",
+        "stdio"
+      ]
+    }
+  }
+}

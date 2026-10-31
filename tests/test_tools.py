@@ -196,6 +196,41 @@ class TestListProjectFiles:
 
 class TestGetFileContent:
     @pytest.mark.asyncio
+    async def test_inclusive_line_range(self, client, httpx_mock):
+        httpx_mock.add_response(
+            json=make_file_response("one\ntwo\nthree\nfour\n", "main.py")
+        )
+        result = await get_file_content.handle(
+            client,
+            {
+                "project": "123",
+                "file_path": "main.py",
+                "ref": "main",
+                "start_line": 2,
+                "end_line": 3,
+            },
+        )
+        assert result["content"] == "two\nthree\n"
+        assert result["total_lines"] == 4
+        assert result["is_partial"] is True
+        assert result["start_line"] == 2
+        assert result["end_line"] == 3
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize("start,end", [(0, None), (3, 2), (True, None)])
+    async def test_invalid_line_range_does_not_call_gitlab(self, client, start, end):
+        with pytest.raises(ValueError):
+            await get_file_content.handle(
+                client,
+                {
+                    "project": "123",
+                    "file_path": "main.py",
+                    "start_line": start,
+                    "end_line": end,
+                },
+            )
+
+    @pytest.mark.asyncio
     async def test_returns_text_content_with_language(self, client, httpx_mock):
         httpx_mock.add_response(
             url=httpx.URL(

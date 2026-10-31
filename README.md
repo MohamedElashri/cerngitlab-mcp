@@ -11,6 +11,7 @@
 ## Features
 
 - **15 MCP tools** for searching, browsing, and analyzing CERN GitLab repositories
+- **MCP 2026-07-28** via SDK v2, with legacy client negotiation, structured output, and explicit read-only annotations
 - **Dual-mode operation** — stdio (single-user) and HTTP (multi-user) modes
 - **CLI tool** (`cerngitlab-cli`) for direct command-line usage
 - **Public access** — works without authentication for public repositories
@@ -64,6 +65,7 @@ All settings are configured via environment variables prefixed with `CERNGITLAB_
 | `CERNGITLAB_GITLAB_OAUTH_CLIENT_ID` | *(empty)* | **HTTP mode** — GitLab OAuth application client ID |
 | `CERNGITLAB_GITLAB_OAUTH_CLIENT_SECRET` | *(empty)* | **HTTP mode** — GitLab OAuth application client secret |
 | `CERNGITLAB_SERVER_BASE_URL` | `http://localhost:8000` | **HTTP mode** — Public base URL (used for OAuth callback) |
+| `CERNGITLAB_HTTP_ALLOWED_ORIGINS` | `[]` | **HTTP mode** — Additional allowed browser origins, as a JSON array |
 | `CERNGITLAB_SESSION_STORAGE_PATH` | `/tmp/cerngitlab/sessions` | **HTTP mode** — Directory for persisting OAuth session files |
 
 ### Authentication
@@ -82,123 +84,29 @@ To create a token:
 
 ## Usage
 
-### Claude Desktop
+### Connect an MCP client
 
-Add to your `claude_desktop_config.json`:
-
-```json
-{
-  "mcpServers": {
-    "cerngitlab": {
-      "command": "uvx",
-      "args": ["cerngitlab-mcp"],
-      "env": {
-        "CERNGITLAB_TOKEN": "glpat-xxxxxxxxxxxx"
-      }
-    }
-  }
-}
-```
-
-> **Note for macOS users:** If you see an error about `uvx` not being found, you may need to provide the absolute path. Claude Desktop does not support `~` or `$HOME` expansion.
->
-> 1. Run `which uvx` in your terminal to find the path (e.g., `/Users/yourusername/.local/bin/uvx`).
-> 2. Use that absolute path in the `command` field:
->
-> ```json
-> "command": "/Users/yourusername/.local/bin/uvx"
-> ```
-
-### Claude Code
-
-**Project-specific (default)** — installs in the current directory's configuration:
+Clients launch the local server themselves. Install [uv](https://docs.astral.sh/uv/),
+then register the stdio command:
 
 ```bash
-claude mcp add cerngitlab-mcp -- uvx cerngitlab-mcp
+# Codex
+codex mcp add cerngitlab -- uvx cerngitlab-mcp --mode stdio
+
+# Claude Code (project scope)
+claude mcp add --transport stdio --scope project cerngitlab -- uvx cerngitlab-mcp --mode stdio
 ```
 
-**Global** — installs for your user account (works in all projects):
+Use `/mcp` to check the connection, then ask the agent to run `test_connectivity`
+and search CERN GitLab for a public project. Public access needs no token.
+For authenticated access, see [Authentication](#authentication) and the
+client-specific environment settings in the guide below.
 
-```bash
-claude mcp add --scope user cerngitlab-mcp -- uvx cerngitlab-mcp
-```
-
-To include authentication, add `-e CERNGITLAB_TOKEN=glpat-xxxxxxxxxxxx` before the `--`:
-
-```bash
-# Example: Global installation with token
-claude mcp add --scope user -e CERNGITLAB_TOKEN=glpat-xxxxxxxxxxxx cerngitlab-mcp -- uvx cerngitlab-mcp
-```
-
-**Manual Configuration** — you can also manually edit your global config at `~/.claude.json` (on Linux/macOS) or `%APPDATA%\Claude\claude.json` (on Windows):
-
-```json
-{
-  "mcpServers": {
-    "cerngitlab": {
-      "command": "uvx",
-      "args": ["cerngitlab-mcp"],
-      "env": {
-        "CERNGITLAB_TOKEN": "glpat-xxxxxxxxxxxx"
-      }
-    }
-  }
-}
-```
-
-### GitHub Copilot
-
-Add to your VS Code `settings.json`:
-
-```json
-{
-  "mcp": {
-    "servers": {
-      "cerngitlab": {
-        "command": "uvx",
-        "args": ["cerngitlab-mcp"],
-        "env": {
-          "CERNGITLAB_TOKEN": "glpat-xxxxxxxxxxxx"
-        }
-      }
-    }
-  }
-}
-```
-
-Or add a `.vscode/mcp.json` to your project:
-
-```json
-{
-  "servers": {
-    "cerngitlab": {
-      "command": "uvx",
-      "args": ["cerngitlab-mcp"],
-      "env": {
-        "CERNGITLAB_TOKEN": "glpat-xxxxxxxxxxxx"
-      }
-    }
-  }
-}
-```
-
-### Gemini CLI
-
-Add to your `~/.gemini/settings.json`:
-
-```json
-{
-  "mcpServers": {
-    "cerngitlab": {
-      "command": "uvx",
-      "args": ["cerngitlab-mcp"],
-      "env": {
-        "CERNGITLAB_TOKEN": "glpat-xxxxxxxxxxxx"
-      }
-    }
-  }
-}
-```
+See the [MCP client integration guide](docs/guides/llm_integration.md) for
+Claude Desktop, VS Code, Copilot CLI, Cursor, Zed, Antigravity, Qwen Code,
+Pi/OMP, OpenCode, Cline, Roo Code, Continue, Goose, development checkouts,
+and authenticated remote HTTP setup. Ready-to-edit configurations are in
+[examples/clients](examples/clients/README.md).
 
 ### Direct usage
 
@@ -328,9 +236,17 @@ See `examples/oauth_server.py` in the repository for a self-contained reference 
 
 1. Client sends a request with `Authorization: Bearer <cern-sso-token>` header.
 2. Server validates the CERN SSO token via CERN's JWKS endpoint.
-3. If the user has no active GitLab OAuth session, the server returns HTTP 202 with a `authorization_url` field.
+3. If the user has no active GitLab OAuth session, `/mcp` returns HTTP 403 with an `authorization_url` field. `/oauth/authorize` returns authorization details as JSON.
 4. The user visits that URL, authorizes the GitLab OAuth application, and is redirected back to `/oauth/callback`.
 5. Subsequent requests are served using the stored GitLab OAuth token. Sessions expire after 2 hours.
+
+`/mcp` is the Streamable HTTP endpoint for MCP clients. Missing or invalid CERN
+tokens return HTTP 401 with a `WWW-Authenticate` resource metadata challenge.
+CERN client registration and the separate GitLab authorization remain required;
+the metadata endpoint does not make this a standalone OAuth authorization server.
+Use one server worker: pending OAuth state and PKCE verifiers are held in memory
+for ten minutes and consumed once. Set `CERNGITLAB_SERVER_BASE_URL` to the exact
+external origin so Host/Origin validation accepts requests through your proxy.
 
 ### API Endpoints
 
@@ -338,6 +254,8 @@ See `examples/oauth_server.py` in the repository for a self-contained reference 
 |---|---|---|---|
 | `GET` | `/` | — | Server information |
 | `GET` | `/health` | — | Health check |
+| `POST` | `/mcp` | CERN SSO | MCP Streamable HTTP endpoint |
+| `GET` | `/.well-known/oauth-protected-resource/mcp` | — | OAuth protected resource metadata |
 | `GET` | `/oauth/authorize` | CERN SSO | Start or check the OAuth authorization flow |
 | `GET` | `/oauth/callback` | — | Receive the GitLab OAuth code (browser redirect) |
 | `GET` | `/tools` | CERN SSO | List available MCP tools |
@@ -352,7 +270,7 @@ Assuming the server is running at `https://gitlabmcp.cern.ch` and the `CERN_SSO_
 # Step 1 – check authorization status
 curl -H "Authorization: Bearer $CERN_SSO_TOKEN" \
      https://gitlabmcp.cern.ch/oauth/authorize
-# If 202, visit the returned authorization_url in a browser and authorize.
+# If authorization_required is true, visit authorization_url and authorize.
 
 # Step 2 – list available tools (once authorized)
 curl -H "Authorization: Bearer $CERN_SSO_TOKEN" \

@@ -43,16 +43,25 @@ Or use `cerngitlab-mcp --mode auto|stdio|http` (auto-detects from
 
 **HTTP** — point the client at `http://<host>:<port>/mcp`. Requests must
 carry a CERN SSO bearer token in the `Authorization: Bearer <token>`
-header. The endpoint speaks Streamable HTTP in stateless mode, so no
-sticky sessions are required.
+header. The endpoint speaks Streamable HTTP in stateless mode. Deploy a single
+worker because pending OAuth state/PKCE verifiers are stored in process memory.
+Authorize GitLab separately through `/oauth/authorize` before connecting.
 
 ### Protocol capabilities
 
-- All tools advertise **read-only annotations** (`readOnlyHint: true`);
-  search tools additionally set `openWorldHint: true`.
+- All tools advertise `readOnlyHint: true`, `destructiveHint: false`,
+  `idempotentHint: true`, and `openWorldHint: true` (they access external GitLab).
 - Every tool declares an **output schema** and returns structured content.
-- GitLab errors and invalid arguments surface as **JSON-RPC errors**
-  rather than error text payloads.
+- GitLab errors and invalid tool arguments return actionable `isError: true`
+  results so agents can correct their calls. Malformed protocol requests remain
+  JSON-RPC errors.
+- Tool discovery has a stable order and a five-minute private cache hint.
+- Stdio startup performs no network probes; use `test_connectivity` on demand.
+- `get_file_content` accepts optional 1-based, inclusive `start_line`/`end_line`.
+
+For Claude Code, Codex, and remote authentication examples, see
+[MCP client integration](docs/guides/llm_integration.md) and the
+[client configuration templates](examples/clients/README.md).
 
 ## Configuration
 
