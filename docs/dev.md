@@ -161,10 +161,10 @@ Test connection to the CERN GitLab instance. No parameters required.
 
 ## Development Setup
 
-Use a current uv release. Packaging is verified with uv 0.13.6 and uv_build
-0.13.6. The older uv 0.9.26 frontend can install the dependencies but fails
+Use a current uv release. Packaging is verified with uv 0.13.8 and uv_build
+0.13.8. The older uv 0.9.26 frontend can install the dependencies but fails
 when rebuilding a wheel from the new backend's source archive. If needed,
-use `uv run --with uv==0.13.6 uv build` for a temporary current build frontend.
+use `uv run --with uv==0.13.8 uv build` for a temporary current build frontend.
 
 ```bash
 # Clone and install dev dependencies
@@ -229,11 +229,11 @@ git commit --no-verify -m "commit message"
 3. Run `uv sync --locked --all-groups`, `uv run pytest -v`,
    `uv run ruff check .`, and `uv build` with a current uv frontend.
 4. Check the wheel and source archive metadata against the intended version.
-5. Commit and push the release changes, then tag the release. For version 0.4.0:
+5. Commit and push the release changes, then tag the release. For version 0.4.1:
 
    ```bash
-   git tag v0.4.0
-   git push origin v0.4.0
+   git tag v0.4.1
+   git push origin v0.4.1
    ```
 
 The tag triggers `.github/workflows/release.yml`, which verifies the package

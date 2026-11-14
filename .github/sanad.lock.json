@@ -99,9 +99,9 @@
       "repo": "action-gh-release",
       "path": "",
       "kind": "github-action",
-      "logical_ref": "v3.0.3",
-      "pinned_sha": "efb35369e0ad2afab669f228072c1b0d510eae64",
-      "resolved_at": "2026-10-17T16:09:27Z"
+      "logical_ref": "v3.0.4",
+      "pinned_sha": "8a0cd651e5b2365bd640854a3fa5dfc70e4875f3",
+      "resolved_at": "2026-11-14T18:51:28Z"
     },
     {
       "file": ".github/workflows/release.yml",

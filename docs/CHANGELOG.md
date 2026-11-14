@@ -2,6 +2,21 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.4.1] - 2026-11-14
+
+### Changed
+- Refreshed all runtime and development dependencies in `uv.lock`, including
+  FastAPI, Pydantic, pydantic-settings, Click, AnyIO, pytest-asyncio, Ruff,
+  and aiofiles type stubs, and raised applicable direct dependency floors.
+- Retained Python 3.10 support with compatible FastAPI and pydantic-settings
+  versions; Python 3.11 and newer use their latest releases.
+- Updated the uv build backend to 0.13.8, the Ruff pre-commit hooks to 0.17.5,
+  and the GitHub release action to 3.0.4.
+
+### Tests
+- Mocked the missing-project CLI test so it verifies the error response
+  without making a real network request to a placeholder host.
+
 ## [0.4.0] - 2026-10-31
 
 ### Changed

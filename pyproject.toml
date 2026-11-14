@@ -1,6 +1,6 @@
 [project]
 name = "cerngitlab-mcp"
-version = "0.4.0"
+version = "0.4.1"
 description = "MCP server for CERN GitLab - code discovery, documentation access, and usage examples for HEP projects"
 readme = "README.md"
 authors = [
@@ -25,10 +25,10 @@ classifiers = [
 dependencies = [
     "mcp>=2.3.0,<3",
     "httpx>=0.28.1",
-    "pydantic>=2.14.2",
+    "pydantic>=2.14.3",
     "pydantic-settings>=2.15.0",
-    "click>=8.5.0",
-    "fastapi>=0.162.0",
+    "click>=8.5.1",
+    "fastapi>=0.162.5",
     "uvicorn>=0.54.0",
     "PyJWT[crypto]>=2.15.1",
     "aiofiles>=25.1.0",
@@ -48,19 +48,19 @@ cerngitlab-mcp-http = "cerngitlab_mcp.server:main_http"
 cerngitlab-cli = "cerngitlab_mcp.cli.main:main"
 
 [build-system]
-requires = ["uv_build>=0.13.6,<0.14.0"]
+requires = ["uv_build>=0.13.8,<0.14.0"]
 build-backend = "uv_build"
 
 [dependency-groups]
 dev = [
     "pytest>=9.2.0",
-    "pytest-asyncio>=1.4.1",
+    "pytest-asyncio>=1.5.0",
     "pytest-httpx>=0.36.2",
     "httpx>=0.28.1",
-    "ruff>=0.17.3",
+    "ruff>=0.17.5",
     "pre-commit>=4.6.2",
     "mypy>=2.4.1",
-    "types-aiofiles>=25.1.0.20260518",
+    "types-aiofiles>=25.1.0.20261107",
 ]
 
 [tool.pytest.ini_options]

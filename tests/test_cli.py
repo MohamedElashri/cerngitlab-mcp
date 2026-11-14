@@ -480,9 +480,12 @@ class TestGetReadme:
         assert data["file_name"] == "README.md"
         assert "# Test Project" in data["content"]
 
-    def test_get_readme_not_found(self, cli_runner):
+    def test_get_readme_not_found(self, cli_runner, httpx_mock):
         """Test README not found error handling."""
-        # This test verifies CLI error handling; detailed API testing is in test_tools.py
+        httpx_mock.add_response(
+            url="https://gitlab.example.com/api/v4/projects/nonexistent%2Fproject?statistics=false",
+            status_code=404,
+        )
         result = cli_runner.invoke(
             cli,
             [
@@ -493,8 +496,8 @@ class TestGetReadme:
             env={"CERNGITLAB_GITLAB_URL": "https://gitlab.example.com"},
         )
 
-        # Should produce error output
-        assert result.output
+        assert result.exit_code == 1
+        assert "not found" in _get_error_output(result)
 
 
 # ---------------------------------------------------------------------------
